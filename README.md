@@ -18,7 +18,13 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 
 ## Utilisation
 
-Ouvre `index.html` dans un navigateur. Pour une version en ligne, active GitHub Pages sur la branche `main` (Settings > Pages).
+L'application est composée de **modules ES** : les navigateurs les refusent quand on ouvre `index.html` en double-cliquant (`file://`). Il faut la servir en HTTP :
+
+```bash
+npm start
+```
+
+Puis ouvre <http://localhost:8080>. Cette commande lance `python3 -m http.server` ; n'importe quel serveur statique convient (`npx serve`, extension « Live Server » de VS Code…). Pour une version en ligne, active GitHub Pages sur la branche `main` (Settings > Pages) : aucun build n'est nécessaire.
 
 ## Ajouter des questions
 
@@ -37,7 +43,7 @@ Tout est dans le tableau `QUESTIONS` de `questions.js` :
 
 Les poids des domaines sont dans `DOMAINS`, la taille de l'examen, la durée et le seuil dans `CONFIG`.
 
-Après chaque ajout, lance le validateur (Node 18+, aucune installation) :
+Après chaque ajout, lance les vérifications (Node 18+, aucune installation) :
 
 ```bash
 npm test
@@ -49,13 +55,28 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | Squelette de la page |
+| `index.html` | Squelette de la page, charge `js/main.js` |
 | `styles.css` | Styles |
-| `questions.js` | Domaines (`DOMAINS`) et banque de questions (`QUESTIONS`) |
-| `app.js` | Logique d'examen, tableau de bord, profil, rendu, sauvegarde locale |
+| `questions.js` | Domaines (`DOMAINS`) et banque de questions (`QUESTIONS`), module ES |
+| `js/main.js` | Point d'entrée : branche les écouteurs et affiche la première vue |
+| `js/config.js` | Réglages (`CONFIG`), clés de stockage, `STORAGE_VERSION`, profil par défaut |
+| `js/data.js` | Accès à la banque de questions (`DOMAINS`, `QUESTIONS`, `Q_BY_ID`) |
+| `js/utils.js` | Utilitaires purs (échappement, mélange, chrono, pourcentages…) |
+| `js/logic.js` | **Logique métier pure** : tirage de l'examen, correction, calcul des résultats, statistiques du tableau de bord, validation du profil |
+| `js/storage.js` | Accès à `localStorage` (tolérant à son absence) et migration de version |
+| `js/state.js` | État partagé (`state`), statistiques, activité, profil, thème |
+| `js/session.js` | Cycle de vie d'une session : chargement, sauvegarde, chrono, démarrage, fin |
+| `js/router.js` | Navigation entre vues |
+| `js/actions.js`, `js/events.js` | Actions `data-action` et écouteurs globaux (clic, clavier, formulaires) |
+| `js/data-io.js` | Export et import JSON des données |
+| `js/views/` | Une vue par fichier : `home`, `quiz` (questions et vérification), `results`, `dashboard`, `profile`, `shared` (barre de navigation) |
+| `js/ui/` | `icons` (SVG), `dialog` (dialogue et message furtif), `effects` (confettis, ondes, compteur) |
 | `scripts/validate-questions.js` | Validateur de la banque |
+| `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
 
-Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `app.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), dernier résultat par question (`ace.stats`), activité par jour (`ace.activity`), profil (`ace.profile`).
+**Règle d'architecture** : `config`, `data`, `utils` et `logic` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
+
+Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), dernier résultat par question (`ace.stats`), activité par jour (`ace.activity`), profil (`ace.profile`).
 
 ## Limites connues
 

@@ -17,7 +17,7 @@ Application statique HTML/CSS/JS, sans backend, données dans `localStorage`. Vo
 - [x] Tableau de bord : chiffres clés, courbe des 10 derniers examens, activité sur 14 jours, maîtrise par domaine, historique
 - [x] Profil : prénom, avatar, date d'examen, score visé, objectif quotidien, thème, export/import JSON, réinitialisation
 - [x] Banque de **64 questions** + validateur `npm test` + CI GitHub Actions
-- [x] Découpage en fichiers (`index.html`, `styles.css`, `app.js`, `questions.js`), UX mobile, contraste
+- [x] Découpage en fichiers (`index.html`, `styles.css`, `questions.js` et, depuis #31, les modules de `js/`), UX mobile, contraste
 
 **Aucun ticket de la feuille de route ci-dessous n'est encore commencé.**
 
@@ -30,7 +30,7 @@ Cocher la case et ajouter le numéro de PR quand un ticket est **terminé et fus
 ### Vague 0 : fondations
 Avant tout le reste : `app.js` (~70 Ko) est touché par presque tous les tickets, le découper évite conflits et régressions.
 
-- [ ] [#31](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/31) P2 Découper `app.js` en modules ES
+- [x] [#31](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/31) P2 Découper `app.js` en modules ES. *Fait (PR à venir). L'application doit désormais être servie en HTTP (`npm start`)*
 - [ ] [#32](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/32) P2 Tests unitaires de la logique (`node:test`)
 
 ### Vague 1 : cœur de la valeur
@@ -78,10 +78,10 @@ Avant tout le reste : `app.js` (~70 Ko) est touché par presque tous les tickets
 
 1. **Prends un ticket à la fois**, dans l'ordre ci-dessus. Respecte les dépendances. Avant de commencer, vérifie sur GitHub que le ticket n'est pas déjà pris (assigné, PR ouverte ou commentaire).
 2. **Une branche et une PR par ticket**. Ne pousse jamais sur `main` directement. Ne crée une PR que si l'utilisateur le demande.
-3. **Avant de pousser** : `npm test` doit être au vert (validation des questions) et `node --check app.js` aussi (la CI fait les deux).
+3. **Avant de pousser** : `npm test` doit être au vert (validation des questions, syntaxe des modules, import Node des modules purs ; la CI lance les deux étapes).
 4. **Si tu ajoutes des questions** : respecte le format décrit dans `README.md` (ids uniques jamais réutilisés, 4 ou 5 options, explication, pas de copie de l'examen officiel).
-5. **Si tu changes le format des données sauvegardées** : incrémente `STORAGE_VERSION` dans `app.js` ou écris une migration. Les anciennes données de l'utilisateur ne doivent pas être perdues (le profil est conservé). Ajoute toute nouvelle donnée à l'export/import JSON.
-6. **Pas de dépendance ni de build sans raison** : l'application s'ouvre aujourd'hui en double-cliquant `index.html`. Si un ticket impose de changer cela, le dire explicitement dans la PR.
+5. **Si tu changes le format des données sauvegardées** : incrémente `STORAGE_VERSION` dans `js/config.js` ou écris une migration. Les anciennes données de l'utilisateur ne doivent pas être perdues (le profil est conservé). Ajoute toute nouvelle donnée à l'export/import JSON.
+6. **Pas de dépendance ni de build sans raison** : l'application est servie telle quelle, sans build (`npm start`, ou GitHub Pages). Depuis #31 elle utilise des modules ES : le double-clic sur `index.html` ne fonctionne plus dans Chrome/Edge. Si un ticket impose d'ajouter une étape de build ou une dépendance, le dire explicitement dans la PR.
 7. **Mobile d'abord** : tout nouvel écran doit fonctionner sur petit écran et au clavier.
 8. **À la fin de ton travail** :
    - coche le ticket dans ce fichier (avec le numéro de PR), mets à jour la date en haut ;
@@ -94,7 +94,8 @@ Avant tout le reste : `app.js` (~70 Ko) est touché par presque tous les tickets
 
 Ajouter une ligne par entrée, la plus récente en haut : `date : ticket : note`.
 
-- 2026-11-10 : feuille de route créée à partir de l'analyse initiale. Aucun ticket commencé.
+- 2026-11-10 : #31 : découpage de `app.js` en modules ES (`js/`). Décision de l'utilisateur : vrais modules ES (import/export) plutôt que scripts classiques, au prix de ne plus pouvoir ouvrir `index.html` en double-cliquant ; servir en HTTP (`npm start`). `package.json` passe en `"type": "module"` (`questions.js` et le validateur sont aussi des modules ES). Règle : `config`, `data`, `utils`, `logic` restent purs (sans DOM ni `state`) pour être testables depuis Node (ticket #32). État mutable uniquement dans `state` (`js/state.js`). Le découpage a été vérifié par un scénario Playwright jouant profil, entraînement, examen, import/export et reprise, comparé à l'ancien `app.js` : 55 instantanés du DOM et de `localStorage` identiques (à l'indentation près). Ce scénario n'est pas dans le dépôt ; il sera repris par #33.
+- 2026-11-10 : feuille de route créée à partir de l'analyse initiale.
 
 ## 5. Questions ouvertes (réponse de l'utilisateur nécessaire)
 

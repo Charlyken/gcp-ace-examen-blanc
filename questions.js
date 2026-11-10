@@ -12,7 +12,7 @@ Format d'une question :
   }
 Ne référencez pas les options par leur lettre dans `explain` : l'ordre change.
 */
-const DOMAINS = {
+export const DOMAINS = {
   // weight = part approximative du domaine dans le tirage de l'examen blanc (total = 100)
   1: { name: "Configurer un environnement cloud",            short: "Environnement",  weight: 17.5 },
   2: { name: "Planifier et configurer une solution cloud",   short: "Planification",  weight: 17.5 },
@@ -21,7 +21,7 @@ const DOMAINS = {
   5: { name: "Configurer l'accès et la sécurité",            short: "Accès et sécurité", weight: 20 }
 };
 
-const QUESTIONS = [
+export const QUESTIONS = [
 
   /* ------------------------------------------------------------------
      DOMAINE 1 — Configurer un environnement cloud
@@ -801,6 +801,3 @@ const QUESTIONS = [
     explain: "Une règle d'organisation s'impose à toutes les ressources situées en dessous, quels que soient les rôles IAM des utilisateurs : même un propriétaire de projet ne peut plus créer de clé. Retirer un rôle ne suffit pas, car d'autres rôles (Propriétaire, Éditeur, Administrateur de clés) contiennent la même autorisation. Une alerte ou un script de nettoyage agissent après coup et laissent une fenêtre d'exposition."
   }
 ];
-
-// Exposé à Node pour le validateur (scripts/validate-questions.js) ; ignoré dans le navigateur.
-if (typeof module !== "undefined") module.exports = { DOMAINS, QUESTIONS };
