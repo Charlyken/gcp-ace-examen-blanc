@@ -6,7 +6,7 @@ import { store } from "./storage.js";
 import { shuffle, isCorrect } from "./utils.js";
 import { newSession, counters } from "./logic.js";
 import { exportData } from "./data-io.js";
-import { loadSession, save, startTimer, startExam, startPractice, move, finish } from "./session.js";
+import { loadSession, save, startTimer, startExam, startPractice, startReview, move, finish } from "./session.js";
 import { go } from "./router.js";
 import { renderQuiz, refreshChrome } from "./views/quiz.js";
 import { renderHome, selectedDomains, updatePracticeCount } from "./views/home.js";
@@ -16,6 +16,7 @@ export const actions = {
   "new-exam": startExam,
   "ask-new-exam": () => openDialog("Abandonner l'examen en cours ?", "Tes réponses actuelles seront effacées et un nouveau tirage de questions commencera.", "Nouvel examen", "new-exam"),
   "new-practice": () => startPractice(selectedDomains()),
+  "new-review": startReview,
   "practice-all": () => startPractice(Object.keys(DOMAINS).map(Number)),
   "practice-domain": el => startPractice([Number(el.dataset.d)]),
   "toggle-domains": () => {

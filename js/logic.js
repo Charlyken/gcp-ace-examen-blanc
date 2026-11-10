@@ -32,14 +32,15 @@ export function drawExam() {
 }
 
 /* ---------------- Sessions ---------------- */
-export function newSession(mode, questions, domains) {
+// `kind` précise l'origine d'une session d'entraînement : "review" = révision du jour (voir srs.js), null = entraînement libre.
+export function newSession(mode, questions, domains, kind) {
   const order = {};
   questions.forEach(q => { order[q.id] = shuffle(q.options.map((_, i) => i)); });
   return {
     mode, ids: questions.map(q => q.id), order,
     answers: {}, validated: {}, flags: {}, current: 0,
     remainingMs: mode === "exam" ? CONFIG.examMinutes * 60000 : null,
-    domains: domains || null, finished: false, startedAt: Date.now()
+    domains: domains || null, kind: kind || null, finished: false, startedAt: Date.now()
   };
 }
 // Une session sauvegardée est inutilisable si des questions ont été retirées de la banque.

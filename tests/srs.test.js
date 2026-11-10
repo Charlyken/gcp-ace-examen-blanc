@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { SRS } from "../js/config.js";
-import { reviewCard, isDue, hasSchedule, normalizeCard, normalizeStats, needsMigration } from "../js/srs.js";
+import { reviewCard, isDue, hasSchedule, normalizeCard, normalizeStats, needsMigration, dueIds, pickReview, nextReview, reviewPlan } from "../js/srs.js";
 import { addDays } from "../js/utils.js";
 
 const D0 = "2026-11-10";
@@ -173,5 +173,90 @@ describe("normalizeStats et needsMigration", () => {
     assert.equal(needsMigration({}), false);
     assert.equal(needsMigration(null), false);
     assert.equal(needsMigration(normalizeStats({ a: { n: 1, ok: true } }, D0)), false);
+  });
+});
+
+describe("dueIds : questions à réviser", () => {
+  const stats = {
+    futur:   card({ due: "2026-11-11" }),
+    aujourd: card({ due: D0 }),
+    retard3: card({ due: "2026-11-07" }),
+    retard9: card({ due: "2026-11-01" }),
+    retired: card({ due: "2026-10-01" })
+  };
+  test("ne garde que les échéances atteintes, les plus en retard d'abord", () => {
+    assert.deepEqual(dueIds(stats, D0, id => id !== "retired"), ["retard9", "retard3", "aujourd"]);
+  });
+  test("écarte les questions retirées de la banque quand un filtre est fourni", () => {
+    assert.ok(dueIds(stats, D0).includes("retired"));
+    assert.ok(!dueIds(stats, D0, id => id !== "retired").includes("retired"));
+  });
+  test("à retard égal : facilité basse (plus difficile) d'abord, puis ordre des identifiants", () => {
+    const s = { b: card({ due: D0, ease: 2.5 }), a: card({ due: D0, ease: 2.5 }), dur: card({ due: D0, ease: 1.4 }) };
+    assert.deepEqual(dueIds(s, D0), ["dur", "a", "b"]);
+  });
+  test("renvoie une liste vide sans données, sans carte échue ou avec une entrée absente", () => {
+    assert.deepEqual(dueIds({}, D0), []);
+    assert.deepEqual(dueIds(null, D0), []);
+    assert.deepEqual(dueIds({ x: card({ due: "2026-12-01" }) }, D0), []);
+    assert.deepEqual(dueIds({ x: null }, D0), []);
+  });
+  test("une question tout juste ratée (revue demain) n'est pas à réviser aujourd'hui", () => {
+    assert.deepEqual(dueIds({ x: reviewCard(undefined, false, D0) }, D0), []);
+    assert.deepEqual(dueIds({ x: reviewCard(undefined, false, D0) }, "2026-11-11"), ["x"]);
+  });
+  test("après une réussite à l'échéance, la question sort de la liste du jour", () => {
+    const s = { x: card({ due: D0 }) };
+    assert.deepEqual(dueIds(s, D0), ["x"]);
+    assert.deepEqual(dueIds({ x: reviewCard(s.x, true, D0) }, D0), []);
+  });
+});
+
+describe("pickReview : série de révision plafonnée", () => {
+  const s = { a: card({ due: "2026-11-01" }), b: card({ due: "2026-11-05" }), c: card({ due: "2026-11-08" }), d: card({ due: D0 }) };
+  test("prend les plus prioritaires jusqu'à la limite", () => {
+    assert.deepEqual(pickReview(s, D0, 2), ["a", "b"]);
+    assert.deepEqual(pickReview(s, D0, 3), ["a", "b", "c"]);
+  });
+  test("limite supérieure au nombre de questions : toutes", () => {
+    assert.equal(pickReview(s, D0, 100).length, 4);
+  });
+  test("limite nulle ou négative : aucune question", () => {
+    assert.deepEqual(pickReview(s, D0, 0), []);
+    assert.deepEqual(pickReview(s, D0, -3), []);
+  });
+});
+
+describe("nextReview : prochaine échéance", () => {
+  test("date la plus proche après aujourd'hui, nombre de questions ce jour-là et délai", () => {
+    const s = { a: card({ due: "2026-11-14" }), b: card({ due: "2026-11-12" }), c: card({ due: "2026-11-12" }), d: card({ due: "2027-01-01" }), due: card({ due: D0 }), late: card({ due: "2026-11-01" }) };
+    assert.deepEqual(nextReview(s, D0), { date: "2026-11-12", days: 2, count: 2 });
+  });
+  test("demain : days vaut 1", () => {
+    assert.deepEqual(nextReview({ a: card({ due: "2026-11-11" }) }, D0), { date: "2026-11-11", days: 1, count: 1 });
+  });
+  test("ignore les échéances atteintes et les questions retirées ; null s'il n'y a rien de prévu", () => {
+    assert.equal(nextReview({ a: card({ due: D0 }), b: card({ due: "2026-10-01" }) }, D0), null);
+    assert.equal(nextReview({ a: card({ due: "2026-11-20" }) }, D0, () => false), null);
+    assert.equal(nextReview({}, D0), null);
+    assert.equal(nextReview(undefined, D0), null);
+  });
+  test("traverse un changement de mois et d'année", () => {
+    assert.deepEqual(nextReview({ a: card({ due: "2027-01-03" }) }, "2026-12-30"), { date: "2027-01-03", days: 4, count: 1 });
+  });
+});
+
+describe("reviewPlan : résumé accueil et tableau de bord", () => {
+  const s = { a: card({ due: "2026-11-01" }), b: card({ due: "2026-11-05" }), c: card({ due: D0 }), d: card({ due: "2026-11-13" }) };
+  test("nombre à réviser, taille de la série plafonnée par l'objectif quotidien, prochaine échéance", () => {
+    assert.deepEqual(reviewPlan(s, D0, 2), { due: 3, batch: 2, next: { date: "2026-11-13", days: 3, count: 1 } });
+    assert.deepEqual(reviewPlan(s, D0, 10), { due: 3, batch: 3, next: { date: "2026-11-13", days: 3, count: 1 } });
+  });
+  test("rien à réviser : série vide", () => {
+    assert.deepEqual(reviewPlan({ a: card({ due: "2026-11-20" }) }, D0, 10), { due: 0, batch: 0, next: { date: "2026-11-20", days: 10, count: 1 } });
+    assert.deepEqual(reviewPlan({}, D0, 10), { due: 0, batch: 0, next: null });
+  });
+  test("un objectif quotidien invalide (0) donne quand même au moins une question", () => {
+    assert.equal(reviewPlan(s, D0, 0).batch, 1);
   });
 });

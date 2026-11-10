@@ -7,7 +7,7 @@ import { store } from "../storage.js";
 import { esc, fmt, clock, pct, dayKey } from "../utils.js";
 import { dashData, daysToExam, countdownText, initialsOf } from "../logic.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML } from "./shared.js";
+import { appbarHTML, reviewSectionHTML } from "./shared.js";
 
 function scoreChart(history) {
   const pts = history.slice(0, 10).reverse();
@@ -67,6 +67,8 @@ export function renderDashboard() {
         <p class="small muted">${left ? `Encore ${left} question${left > 1 ? "s" : ""} à valider aujourd'hui.` : "Objectif quotidien atteint, bravo !"}</p>
       </div>
     </header>
+
+    ${reviewSectionHTML()}
 
     <section class="kpis" aria-label="Chiffres clés">
       <div class="kpi accent"><span class="lbl">Examens blancs</span><span class="val num">${n}</span><span class="sub">${n ? `Meilleur score : <b class="num">${d.best} %</b> · moyenne <b class="num">${d.avg} %</b>` : "Aucun examen passé"}</span></div>

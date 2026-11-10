@@ -19,7 +19,7 @@
    - réussite avant l'échéance (entraînement libre, revue des erreurs) : comptée dans n/ok/hist, mais le planning
      ne bouge pas : on ne gagne pas d'intervalle en révisant trop tôt. */
 import { SRS } from "./config.js";
-import { addDays, isDateKey } from "./utils.js";
+import { addDays, daysBetween, isDateKey } from "./utils.js";
 
 const round2 = x => Math.round(x * 100) / 100;
 const int = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(v)));
@@ -81,3 +81,32 @@ export function normalizeStats(raw, today, isKnownId) {
 // Vrai si au moins une entrée est encore au format d'avant la répétition espacée (donc à migrer puis réenregistrer).
 export const needsMigration = raw =>
   !!raw && typeof raw === "object" && Object.values(raw).some(v => v && typeof v === "object" && !hasSchedule(v));
+
+/* ---------------- Révision du jour ---------------- */
+
+// Identifiants des questions à réviser (échéance atteinte), les plus en retard d'abord ;
+// à retard égal, les plus difficiles (facilité basse) puis l'ordre des identifiants. `isKnownId` écarte les questions retirées.
+export function dueIds(stats, today, isKnownId) {
+  return Object.entries(stats || {})
+    .filter(([id, c]) => (!isKnownId || isKnownId(id)) && isDue(c, today))
+    .sort(([ia, a], [ib, b]) => daysBetween(b.due, today) - daysBetween(a.due, today) || a.ease - b.ease || (ia < ib ? -1 : ia > ib ? 1 : 0))
+    .map(([id]) => id);
+}
+
+// Questions d'une série de révision : les `limit` plus prioritaires.
+export const pickReview = (stats, today, limit, isKnownId) => dueIds(stats, today, isKnownId).slice(0, Math.max(0, limit));
+
+// Prochaine échéance après aujourd'hui : { date, days, count } (count = questions prévues ce jour-là), ou null.
+export function nextReview(stats, today, isKnownId) {
+  const future = Object.entries(stats || {}).filter(([id, c]) => (!isKnownId || isKnownId(id)) && c && c.due > today);
+  if (!future.length) return null;
+  const date = future.reduce((m, [, c]) => (c.due < m ? c.due : m), future[0][1].due);
+  return { date, days: daysBetween(today, date), count: future.filter(([, c]) => c.due === date).length };
+}
+
+// Résumé affiché sur l'accueil et le tableau de bord : combien à réviser, taille de la prochaine série
+// (plafonnée par l'objectif quotidien `daily`) et prochaine échéance.
+export function reviewPlan(stats, today, daily, isKnownId) {
+  const due = dueIds(stats, today, isKnownId).length;
+  return { due, batch: Math.min(due, Math.max(1, daily)), next: nextReview(stats, today, isKnownId) };
+}

@@ -12,7 +12,7 @@ function topbarHTML() {
   const s = state.session;
   return `
     <div class="row spread topline">
-      <strong class="ttl">${s.mode === "exam" ? "Examen blanc" : "Entraînement"}</strong>
+      <strong class="ttl">${s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : "Entraînement"}</strong>
       ${s.mode === "exam" ? `<span class="timer ${s.remainingMs < CONFIG.lowTimeMs ? "low" : ""}" id="timer" aria-label="Temps restant">${IC.clock}<span id="timer-txt">${clock(state.endTime ? state.endTime - Date.now() : s.remainingMs)}</span></span>` : ""}
       <span class="row tools">
         <button class="btn btn-ghost" data-action="quit">Quitter</button>

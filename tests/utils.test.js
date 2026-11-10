@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { esc, fmt, shuffle, sameSet, clock, pct, isCorrect, clamp, num, dayKey, isDateKey, addDays } from "../js/utils.js";
+import { esc, fmt, shuffle, sameSet, clock, pct, isCorrect, clamp, num, dayKey, isDateKey, addDays, daysBetween, whenText } from "../js/utils.js";
 import { seedRandom } from "./helpers.js";
 
 test("esc échappe les caractères HTML dangereux", () => {
@@ -109,4 +109,28 @@ test("addDays traverse un changement d'heure sans sauter ni répéter un jour", 
   for (let i = 0; i < 15; i++) { k = addDays(k, 1); seen.push(k); }
   assert.equal(new Set(seen).size, 15);
   assert.equal(seen[0], "2026-03-21"); assert.equal(seen[14], "2026-04-04");
+});
+
+test("daysBetween : écart signé en jours, mois et années franchis, heure d'été comprise", () => {
+  assert.equal(daysBetween("2026-11-10", "2026-11-10"), 0);
+  assert.equal(daysBetween("2026-11-10", "2026-11-11"), 1);
+  assert.equal(daysBetween("2026-11-11", "2026-11-10"), -1);
+  assert.equal(daysBetween("2026-12-30", "2027-01-03"), 4);
+  assert.equal(daysBetween("2028-02-28", "2028-03-01"), 2, "année bissextile");
+  assert.equal(daysBetween("2026-03-20", "2026-04-04"), 15, "changement d'heure de mars");
+  assert.equal(daysBetween("2026-10-20", "2026-11-04"), 15, "changement d'heure d'octobre / novembre");
+  assert.equal(daysBetween("2026-03-01", "2026-03-15"), 14, "changement d'heure américain de mars");
+  assert.equal(daysBetween("2026-09-20", "2026-10-10"), 20, "changement d'heure de l'hémisphère sud");
+});
+
+test("addDays et daysBetween sont réciproques", () => {
+  for (const n of [-40, -1, 0, 1, 6, 15, 180, 400]) assert.equal(daysBetween("2026-06-15", addDays("2026-06-15", n)), n);
+});
+
+test("whenText : aujourd'hui, demain, dans n jours", () => {
+  assert.equal(whenText(0), "aujourd'hui");
+  assert.equal(whenText(-2), "aujourd'hui");
+  assert.equal(whenText(1), "demain");
+  assert.equal(whenText(2), "dans 2 jours");
+  assert.equal(whenText(30), "dans 30 jours");
 });
