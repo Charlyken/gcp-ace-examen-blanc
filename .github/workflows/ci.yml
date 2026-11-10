@@ -11,6 +11,8 @@ jobs:
         with:
           node-version: 20
       - name: Valider la banque de questions
-        run: npm test
+        run: npm run validate
       - name: Vérifier les modules (syntaxe et imports Node)
         run: npm run check
+      - name: Tests unitaires
+        run: npm run test:unit

@@ -31,7 +31,7 @@ Cocher la case et ajouter le numéro de PR quand un ticket est **terminé et fus
 Avant tout le reste : `app.js` (~70 Ko) est touché par presque tous les tickets, le découper évite conflits et régressions.
 
 - [x] [#31](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/31) P2 Découper `app.js` en modules ES. *Fait (PR à venir). L'application doit désormais être servie en HTTP (`npm start`)*
-- [ ] [#32](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/32) P2 Tests unitaires de la logique (`node:test`)
+- [x] [#32](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/32) P2 Tests unitaires de la logique (`node:test`). *Fait (PR à venir) : scoring, tirage par domaine, profil, compte à rebours, tableau de bord, stockage. Les tests de la répétition espacée et de la série sont à ajouter avec #14 et #21*
 
 ### Vague 1 : cœur de la valeur
 - [ ] [#11](https://github.com/Charlyken/gcp-ace-examen-blanc/issues/11) P1 Métadonnées des questions (`topic`, `difficulty`, `doc`). *Débloque #17, #18, #19*
@@ -94,6 +94,7 @@ Avant tout le reste : `app.js` (~70 Ko) est touché par presque tous les tickets
 
 Ajouter une ligne par entrée, la plus récente en haut : `date : ticket : note`.
 
+- 2026-11-10 : #32 : 57 tests unitaires avec `node:test` (`npm run test:unit`, inclus dans `npm test` et la CI), dossier `tests/`. Aucune dépendance. Vérifiés par mutation (13 modifications volontaires du code, 11 détectées d'emblée, 1 lacune comblée, 1 mutation équivalente ignorée). Convention : un module pur de `js/` par fichier de test ; `tests/helpers.js` fournit `seedRandom` et `freezeDate`. Piège : avec Node 22, `node --test tests/` (dossier en argument) échoue, utiliser `node --test` sans argument. Les futurs tickets qui ajoutent de la logique pure (#14, #21, #22, #18…) doivent livrer leurs tests.
 - 2026-11-10 : #31 : découpage de `app.js` en modules ES (`js/`). Décision de l'utilisateur : vrais modules ES (import/export) plutôt que scripts classiques, au prix de ne plus pouvoir ouvrir `index.html` en double-cliquant ; servir en HTTP (`npm start`). `package.json` passe en `"type": "module"` (`questions.js` et le validateur sont aussi des modules ES). Règle : `config`, `data`, `utils`, `logic` restent purs (sans DOM ni `state`) pour être testables depuis Node (ticket #32). État mutable uniquement dans `state` (`js/state.js`). Le découpage a été vérifié par un scénario Playwright jouant profil, entraînement, examen, import/export et reprise, comparé à l'ancien `app.js` : 55 instantanés du DOM et de `localStorage` identiques (à l'indentation près). Ce scénario n'est pas dans le dépôt ; il sera repris par #33.
 - 2026-11-10 : feuille de route créée à partir de l'analyse initiale.
 

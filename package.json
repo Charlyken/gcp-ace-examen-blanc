@@ -6,7 +6,8 @@
   "scripts": {
     "validate": "node scripts/validate-questions.js",
     "check": "node scripts/check-modules.js",
-    "test": "node scripts/validate-questions.js && node scripts/check-modules.js",
+    "test:unit": "node --test",
+    "test": "node scripts/validate-questions.js && node scripts/check-modules.js && node --test",
     "start": "python3 -m http.server 8080"
   }
 }
