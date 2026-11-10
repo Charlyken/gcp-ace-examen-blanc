@@ -67,7 +67,7 @@ svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor
 
 .strip { height: 4px; background: linear-gradient(90deg, var(--g-blue) 0 25%, var(--g-red) 25% 50%, var(--g-yellow) 50% 75%, var(--g-green) 75%); }
 .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 72px; display: flex; flex-direction: column; gap: 20px; }
-.card { background: var(--surface); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-1); }
+.card { --cpx: 24px; --cpy: 24px; background: var(--surface); border-radius: var(--radius); padding: var(--cpy) var(--cpx); display: flex; flex-direction: column; gap: 16px; box-shadow: var(--shadow-1); }
 .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .spread { justify-content: space-between; }
 
@@ -129,6 +129,8 @@ svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor
 .mode-ic.green { background: var(--good-soft); color: var(--good); }
 .facts { display: flex; flex-wrap: wrap; gap: 8px; }
 .fact { background: var(--surface-2); border-radius: 999px; padding: 4px 12px; font-size: .85rem; color: var(--muted); }
+.fact.warn { background: var(--bad-soft); color: var(--bad); }
+.fact.warn b { color: var(--bad); }
 .fact b { color: var(--ink); font-family: var(--font-mono); font-weight: 500; }
 .note { background: var(--surface-2); border-radius: 16px; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
 
@@ -165,7 +167,7 @@ td.r, th.r { text-align: right; }
 .tag { display: inline-flex; align-items: center; gap: 6px; font: 500 .8rem var(--font-display); padding: 4px 12px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
 .tag.dtag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dc); }
 .tag.multi { background: var(--warn-soft); color: var(--warn); }
-.qcard { padding: 28px; gap: 20px; }
+.qcard { --cpx: 28px; --cpy: 28px; gap: 20px; }
 .qtext { font: 400 1.2rem/1.5 var(--font-display); }
 .options { display: flex; flex-direction: column; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
 .opt {
@@ -201,7 +203,8 @@ td.r, th.r { text-align: right; }
 .nav-grid button.current { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .nav-grid button.flagged { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--g-yellow); overflow: visible; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .8rem; color: var(--muted); }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; box-sizing: border-box; }
+.legend i.dash { background: var(--bad-soft); border: 1.5px dashed var(--bad); }
 summary { cursor: pointer; font: 500 1rem var(--font-display); }
 
 /* --- Résultats --- */
@@ -240,13 +243,18 @@ summary { cursor: pointer; font: 500 1rem var(--font-display); }
 .exam .card { box-shadow: none; border: 1px solid var(--line); border-radius: 12px; animation: none; }
 .exam .opt { border-radius: 8px; }
 .exam .qtext { font-family: var(--font-body); }
-.plist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
-.plist button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; text-align: left; }
+.plist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.plist button { position: relative; width: 100%; height: 48px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 12px; font: 500 .95rem var(--font-mono); cursor: pointer; transition: border-color .15s, transform .15s var(--ease); }
+.plist button.answered { background: var(--accent-soft); color: var(--accent); }
+.plist button.empty { background: var(--bad-soft); color: var(--bad); border: 1.5px dashed var(--bad); }
 .plist button:hover { border-color: var(--accent); }
-.plist button > :first-child { flex: 1; }
-.plist .st { font: 500 .78rem var(--font-display); padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.plist button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.plist button.flagged { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--g-yellow); }
+.plist button svg { position: absolute; top: 4px; right: 4px; width: 13px; height: 13px; color: var(--warn); fill: currentColor; }
 .st.flag { background: var(--warn-soft); color: var(--warn); }
 .kbd-hint { text-align: center; }
+/* Barre d'actions : reste visible en bas de l'écran tant que la carte est plus haute que la fenêtre */
+.sticky-bar { position: sticky; bottom: 0; z-index: 4; background: var(--surface); margin: 0 calc(-1 * var(--cpx)) calc(-1 * var(--cpy)); padding: 12px var(--cpx) calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); }
 @media (hover: none) { .kbd-hint { display: none; } }
 
 /* --- Boîte de dialogue --- */
@@ -256,9 +264,19 @@ summary { cursor: pointer; font: 500 1rem var(--font-display); }
 @media (max-width: 640px) {
   .hero { grid-template-columns: 1fr; padding: 24px 20px; border-radius: 24px; }
   .art { height: 120px; order: -1; scale: .62; transform-origin: left top; width: 260px; margin-bottom: -40px; }
-  .card { padding: 18px; border-radius: 20px; } .qcard { padding: 20px 16px; }
+  .card { --cpx: 18px; --cpy: 18px; border-radius: 20px; } .qcard { --cpx: 16px; --cpy: 20px; }
   .qtext { font-size: 1.08rem; }
-  .actions .btn { flex: 1 1 45%; padding-inline: 12px; }
+  .sticky-bar { flex-wrap: nowrap; gap: 8px; }
+  .actions .btn { padding-inline: 14px; }
+  .actions .btn-primary { flex: 1; justify-content: center; }
+  .hide-sm { display: none; }
+  /* Bandeau compact : une ligne pour chrono et boutons */
+  .topbar-in { padding: 8px 16px 10px; gap: 6px; }
+  .topline { flex-wrap: nowrap; gap: 8px; }
+  .topline .ttl { display: none; }
+  .topline .tools { flex-wrap: nowrap; gap: 4px; margin-left: auto; }
+  .topline .btn { padding: 8px 14px; }
+  .timer { padding: 5px 12px; font-size: 1rem; }
   .score { grid-template-columns: 1fr; justify-items: center; text-align: center; } .score-side { align-items: center; }
   .dom { grid-template-columns: auto 1fr; } .dom .res { grid-column: 2; }
 }

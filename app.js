@@ -274,12 +274,12 @@
   function topbarHTML() {
     const s = session;
     return `
-      <div class="row spread">
-        <strong>${s.mode === "exam" ? "Examen blanc" : "Entraînement"}</strong>
+      <div class="row spread topline">
+        <strong class="ttl">${s.mode === "exam" ? "Examen blanc" : "Entraînement"}</strong>
         ${s.mode === "exam" ? `<span class="timer ${s.remainingMs < CONFIG.lowTimeMs ? "low" : ""}" id="timer" aria-label="Temps restant">${IC.clock}<span id="timer-txt">${clock(endTime ? endTime - Date.now() : s.remainingMs)}</span></span>` : ""}
-        <span class="row">
+        <span class="row tools">
           <button class="btn btn-ghost" data-action="quit">Quitter</button>
-          <button class="btn" data-action="ask-finish">${s.mode === "exam" ? "Vérifier et terminer" : "Terminer"}</button>
+          <button class="btn" data-action="ask-finish">${s.mode === "exam" ? `Vérifier<span class="hide-sm"> et terminer</span>` : "Terminer"}</button>
         </span>
       </div>
       <div class="bar" id="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${s.ids.length}" aria-label="Progression"><i id="pfill"></i></div>
@@ -349,7 +349,7 @@
       <div class="topbar"><div class="strip"></div><div class="topbar-in">${topbarHTML()}</div></div>
       <main class="wrap">
         <div id="qslot"></div>
-        <details class="card" open>
+        <details class="card"${window.matchMedia("(max-width: 640px)").matches ? "" : " open"}>
           <summary>Toutes les questions</summary>
           <div class="nav-grid" id="nav-grid"></div>
           <div class="legend">
@@ -374,8 +374,8 @@
         ${locked ? `<div class="feedback ${good ? "ok" : "ko"}" role="status">
             <strong>${good ? IC.check + "Correct" + (streakInfo().streak >= 3 ? " · " + streakInfo().streak + " d'affilée" : "") : IC.cross + "Pas tout à fait"}</strong>
             <p>${fmt(q.explain)}</p></div>` : ""}
-        <div class="row spread actions">
-          <button class="btn btn-ghost" data-action="prev" ${s.current === 0 ? "disabled" : ""}>${IC.prev} Précédente</button>
+        <div class="row spread actions sticky-bar">
+          <button class="btn btn-ghost" data-action="prev" aria-label="Question précédente" ${s.current === 0 ? "disabled" : ""}>${IC.prev}<span class="hide-sm">Précédente</span></button>
           <button class="btn btn-flag" data-action="flag" aria-pressed="${!!s.flags[id]}">${IC.flag}<span>${s.flags[id] ? "Marquée" : "À revoir"}</span></button>
           ${s.mode === "practice" && !locked
             ? `<button class="btn btn-primary" data-action="validate" id="btn-validate" ${sel.length ? "" : "disabled"}>Valider ${IC.check}</button>`
@@ -401,19 +401,21 @@
     </div></div></div>
     <main class="wrap">
       <section class="card">
-        <div class="facts"><span class="fact"><b>${c.done}</b> répondues</span><span class="fact"><b>${c.left}</b> sans réponse</span><span class="fact"><b>${c.flagged}</b> marquées</span></div>
+        <div class="facts"><span class="fact"><b>${c.done}</b> répondues</span><span class="fact${c.left ? " warn" : ""}"><b>${c.left}</b> sans réponse</span><span class="fact"><b>${c.flagged}</b> marquées</span></div>
         <p class="small muted">Clique sur une question pour y revenir. Une fois l'examen soumis, les réponses ne sont plus modifiables.</p>
         <div class="chips" role="group" aria-label="Filtrer les questions">
           ${[["all", "Toutes"], ["empty", "Sans réponse"], ["flagged", "Marquées"]].map(([k, l]) =>
             `<label class="chip"><input type="radio" name="pf" id="pf-${k}" value="${k}" ${preFilter === k ? "checked" : ""}><span>${l}</span></label>`).join("")}
         </div>
-        ${list.length ? `<ul class="plist">${list.map(r => `<li><button data-action="goto" data-i="${r.i}">
-            <span class="num">Question ${r.i + 1}</span>
-            ${r.flagged ? `<span class="st flag">Marquée</span>` : ""}
-            <span class="st ${r.answered ? "ok" : "ko"}">${r.answered ? "Répondue" : "Sans réponse"}</span></button></li>`).join("")}</ul>`
+        <div class="legend" aria-hidden="true">
+          <span><i style="background:var(--accent-soft)"></i>Répondue</span>
+          <span><i class="dash"></i>Sans réponse</span>
+          <span><i style="background:var(--g-yellow)"></i>Marquée</span>
+        </div>
+        ${list.length ? `<ul class="plist">${list.map(r => `<li><button class="${r.answered ? "answered" : "empty"}${r.flagged ? " flagged" : ""}" data-action="goto" data-i="${r.i}" aria-label="Question ${r.i + 1}, ${r.answered ? "répondue" : "sans réponse"}${r.flagged ? ", marquée" : ""}"><span class="num">${r.i + 1}</span>${r.flagged ? IC.flag : ""}</button></li>`).join("")}</ul>`
           : `<p class="muted">Aucune question dans ce filtre.</p>`}
-        <div class="row spread">
-          <button class="btn" data-action="back-quiz">${IC.prev} Revenir aux questions</button>
+        <div class="row spread sticky-bar">
+          <button class="btn" data-action="back-quiz">${IC.prev} Revenir<span class="hide-sm"> aux questions</span></button>
           <button class="btn btn-primary" data-action="ask-submit">Soumettre l'examen</button>
         </div>
       </section>
