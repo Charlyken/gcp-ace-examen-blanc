@@ -99,6 +99,12 @@ describe("newSession et isSessionUsable", () => {
     assert.equal(newSession("practice", QUESTIONS.slice(0, 2)).domains, null);
   });
 
+  test("chaque session démarre avec un suivi d'XP vide", () => {
+    const s = newSession("practice", QUESTIONS.slice(0, 2));
+    assert.deepEqual(s.xp, { start: 0, answers: 0, earned: 0, gain: {}, bonuses: [], total: 0, end: 0 });
+    assert.notEqual(newSession("practice", QUESTIONS.slice(0, 2)).xp, s.xp, "objets indépendants");
+  });
+
   test("kind distingue la révision du jour de l'entraînement libre", () => {
     assert.equal(newSession("practice", QUESTIONS.slice(0, 2), null, "review").kind, "review");
     assert.equal(newSession("practice", QUESTIONS.slice(0, 2), [1]).kind, null);

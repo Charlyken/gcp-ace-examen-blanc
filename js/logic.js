@@ -3,6 +3,7 @@
 import { CONFIG, DEFAULT_PROFILE, AVATAR_COLORS, THEMES } from "./config.js";
 import { DOMAINS, QUESTIONS, Q_BY_ID } from "./data.js";
 import { shuffle, pct, isCorrect, num, dayKey } from "./utils.js";
+import { newSessionXp } from "./xp.js";
 
 /* ---------------- Tirage de l'examen ---------------- */
 // Tirage de l'examen : réparti par domaine selon DOMAINS[*].weight (méthode du plus fort reste).
@@ -40,7 +41,8 @@ export function newSession(mode, questions, domains, kind) {
     mode, ids: questions.map(q => q.id), order,
     answers: {}, validated: {}, flags: {}, current: 0,
     remainingMs: mode === "exam" ? CONFIG.examMinutes * 60000 : null,
-    domains: domains || null, kind: kind || null, finished: false, startedAt: Date.now()
+    domains: domains || null, kind: kind || null, finished: false, startedAt: Date.now(),
+    xp: newSessionXp()   // XP de la session (voir xp.js) ; `start` = total d'XP au départ, fixé au démarrage
   };
 }
 // Une session sauvegardée est inutilisable si des questions ont été retirées de la banque.

@@ -5,7 +5,7 @@ import { state, saveProfile, applyTheme } from "../state.js";
 import { esc } from "../utils.js";
 import { sanitizeProfile, initialsOf } from "../logic.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML } from "./shared.js";
+import { appbarHTML, levelSectionHTML } from "./shared.js";
 
 export function renderProfile() {
   const p = state.profile;
@@ -17,6 +17,7 @@ export function renderProfile() {
       <h1>Ton profil</h1>
       <p class="muted">Personnalise ton espace et tes objectifs. Tout est enregistré automatiquement dans ce navigateur, sans compte ni serveur.</p>
     </header>
+    ${levelSectionHTML()}
     <form id="profile-form" class="pform" autocomplete="off" novalidate>
       <section class="card" aria-labelledby="h-id">
         <h2 id="h-id">Identité</h2>

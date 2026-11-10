@@ -14,5 +14,6 @@ export const IC = {
   edit: svg('<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/>'),
   download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
   upload: svg('<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>'),
+  star: svg('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8 6.8 19.6l1-5.8L3.5 9.7l5.9-.9L12 3.5z"/>'),
   external: svg('<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>')
 };

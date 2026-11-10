@@ -9,7 +9,7 @@ import { toast } from "./ui/dialog.js";
 import { renderProfile } from "./views/profile.js";
 
 export function exportData() {
-  const data = buildExport({ profile: state.profile, stats: state.stats, activity: state.activity, history: store.get(KEYS.history) || [] }, STORAGE_VERSION);
+  const data = buildExport({ profile: state.profile, stats: state.stats, activity: state.activity, history: store.get(KEYS.history) || [], xp: state.xp }, STORAGE_VERSION);
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   const a = document.createElement("a"); a.href = url; a.download = `gcp-ace-progression-${dayKey()}.json`;
   document.body.appendChild(a); a.click(); a.remove();
@@ -26,6 +26,7 @@ export function importData(file) {
       if (d.activity) state.activity = d.activity;
       if (d.history) store.set(KEYS.history, d.history);
       if (d.profile) state.profile = d.profile;
+      if (d.xp) state.xp = d.xp;
       saveStats(); saveProfile(); applyTheme();
       renderProfile(); toast("Données importées");
     } catch (e) { toast("Fichier non reconnu"); }

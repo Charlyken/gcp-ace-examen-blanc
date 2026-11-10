@@ -7,7 +7,8 @@ import { store } from "../storage.js";
 import { esc, fmt, clock, pct, dayKey } from "../utils.js";
 import { dashData, daysToExam, countdownText, initialsOf } from "../logic.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML, reviewSectionHTML, currentStreak } from "./shared.js";
+import { appbarHTML, reviewSectionHTML, levelSectionHTML, currentStreak } from "./shared.js";
+import { levelFor } from "../xp.js";
 import { streakSummary } from "../streak.js";
 
 function scoreChart(history) {
@@ -58,6 +59,7 @@ export function renderDashboard() {
         <h1>${state.profile.name ? `Bonjour ${esc(state.profile.name)}` : "Ta progression"}</h1>
         <div class="facts">
           <span class="fact${daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 ? " warn" : ""}">${IC.cal}${countdown || "Date d'examen non renseignée"}</span>
+          <span class="fact">${IC.star}Niveau <b>${levelFor(state.xp.total).level}</b></span>
           <span class="fact${streak.atRisk ? " warn" : ""}">${IC.fire}<b>${streak.count}</b> jour${streak.count > 1 ? "s" : ""} d'affilée</span>
           <span class="fact">${IC.target}Score visé <b>${state.profile.target} %</b></span>
         </div>
@@ -70,6 +72,8 @@ export function renderDashboard() {
         ${streak.count > 0 ? `<p class="small muted">${streakText.rest}</p>` : ""}
       </div>
     </header>
+
+    ${levelSectionHTML()}
 
     ${reviewSectionHTML()}
 

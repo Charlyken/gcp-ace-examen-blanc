@@ -5,6 +5,7 @@ import { esc, dayKey, whenText } from "../utils.js";
 import { initialsOf } from "../logic.js";
 import { reviewPlan } from "../srs.js";
 import { dayStreak, streakSummary } from "../streak.js";
+import { levelFor, xpRulesText } from "../xp.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
 
@@ -77,5 +78,24 @@ export function streakSectionHTML() {
       <div class="row spread"><strong class="small">Objectif du jour</strong><span class="small num muted">${info.todayN}/${info.todayGoal} questions</span></div>
       <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${info.todayGoal}" aria-valuenow="${p}" aria-label="Objectif quotidien"><i class="${info.todayDone ? "ok" : ""}" style="width:${Math.round(p / info.todayGoal * 100)}%"></i></div>
     </div>
+  </section>`;
+}
+
+// Carte « niveau » (tableau de bord et profil) : niveau, XP total, progression vers le niveau suivant, barème.
+export function levelSectionHTML() {
+  const total = state.xp.total, L = levelFor(total);
+  return `<section class="card level" aria-labelledby="h-level">
+    <div class="review-main">
+      <span class="mode-ic xp">${IC.star}</span>
+      <div class="review-text">
+        <h2 id="h-level">Niveau ${L.level}</h2>
+        <p class="small muted"><b class="num">${total}</b> XP au total · encore <b class="num">${L.need - L.into}</b> XP pour le niveau ${L.level + 1}</p>
+      </div>
+    </div>
+    <div class="goal-line">
+      <div class="row spread"><strong class="small">Vers le niveau ${L.level + 1}</strong><span class="small num muted">${L.into}/${L.need} XP</span></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${L.need}" aria-valuenow="${L.into}" aria-label="Progression vers le niveau ${L.level + 1}"><i style="width:${L.pct}%"></i></div>
+    </div>
+    <details class="xp-rules"><summary class="small">Comment gagner de l'XP ?</summary><ul class="small muted">${xpRulesText().map(t => `<li>${esc(t)}</li>`).join("")}</ul></details>
   </section>`;
 }

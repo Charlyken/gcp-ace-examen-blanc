@@ -1,11 +1,12 @@
 /* Cycle de vie d'une session : chargement, sauvegarde, chronomètre, démarrage et fin. */
 import { CONFIG, KEYS, HISTORY_MAX } from "./config.js";
 import { QUESTIONS, Q_BY_ID } from "./data.js";
-import { state, record, saveStats } from "./state.js";
+import { state, record, saveStats, awardXp } from "./state.js";
 import { store } from "./storage.js";
 import { clock, shuffle, dayKey } from "./utils.js";
 import { compute, drawExam, newSession, isSessionUsable } from "./logic.js";
 import { pickReview } from "./srs.js";
+import { newSessionXp, recordAnswerXp, settleSessionXp } from "./xp.js";
 import { closeDialog } from "./ui/dialog.js";
 import { go, render } from "./router.js";
 
@@ -38,17 +39,33 @@ export function startTimer() {
 }
 export function stopTimer() { if (state.timerId) clearInterval(state.timerId); state.timerId = null; state.endTime = 0; }
 
+// Suivi d'XP d'une session ; les sessions sauvegardées avant l'XP n'en ont pas.
+const ensureXp = s => (s.xp = s.xp && s.xp.gain ? s.xp : newSessionXp(state.xp.total));
+// À appeler au démarrage d'une session : mémorise le total d'XP de départ (pour détecter un changement de niveau).
+export function beginSession(s) { ensureXp(s).start = state.xp.total; return s; }
+
+// XP d'une réponse validée en entraînement ; renvoie l'XP gagné.
+export function awardForAnswer(id, ok) {
+  const gained = awardXp(id, ok);
+  state.session.xp = recordAnswerXp(ensureXp(state.session), id, gained);
+  return gained;
+}
+
 export function finish(timeUp) {
   if (!state.session || state.session.finished) return;
-  if (state.session.mode === "exam" && state.endTime) state.session.remainingMs = Math.max(0, state.endTime - Date.now());
+  const s = state.session;
+  if (s.mode === "exam" && state.endTime) s.remainingMs = Math.max(0, state.endTime - Date.now());
   stopTimer();
-  state.session.finished = true; state.session.timeUp = !!timeUp; state.session.finishedAt = Date.now();
-  store.set(KEYS[state.session.mode], state.session);
-  if (state.session.mode === "exam") {
-    const r = compute(state.session);
-    r.items.forEach(i => record(i.id, i.status === "ok")); saveStats();
+  s.finished = true; s.timeUp = !!timeUp; s.finishedAt = Date.now();
+  const r = compute(s);
+  const settled = settleSessionXp(state.xp, s, r, dayKey());
+  state.xp = settled.xp; s.xp = settled.summary;
+  store.set(KEYS[s.mode], s);
+  if (s.mode === "exam") r.items.forEach(i => record(i.id, i.status === "ok"));
+  saveStats();
+  if (s.mode === "exam") {
     const h = store.get(KEYS.history) || [];
-    h.unshift({ date: state.session.finishedAt, ok: r.ok, total: r.total, pct: r.pct, usedMs: CONFIG.examMinutes * 60000 - (state.session.remainingMs || 0) });
+    h.unshift({ date: s.finishedAt, ok: r.ok, total: r.total, pct: r.pct, usedMs: CONFIG.examMinutes * 60000 - (s.remainingMs || 0) });
     store.set(KEYS.history, h.slice(0, HISTORY_MAX));
   }
   closeDialog();
@@ -58,14 +75,14 @@ export function finish(timeUp) {
 
 export function startExam() {
   closeDialog();
-  state.session = newSession("exam", drawExam());
+  state.session = beginSession(newSession("exam", drawExam()));
   store.set(KEYS.exam, state.session);
   go("quiz"); startTimer();
 }
 export function startPractice(domains) {
   const qs = shuffle(QUESTIONS.filter(q => domains.includes(q.domain)));
   if (!qs.length) return;
-  state.session = newSession("practice", qs, domains);
+  state.session = beginSession(newSession("practice", qs, domains));
   store.set(KEYS.practice, state.session);
   go("quiz");
 }
@@ -74,7 +91,7 @@ export function startPractice(domains) {
 export function startReview() {
   const ids = pickReview(state.stats, dayKey(), state.profile.daily, id => !!Q_BY_ID[id]);
   if (!ids.length) return;
-  state.session = newSession("practice", shuffle(ids).map(id => Q_BY_ID[id]), null, "review");
+  state.session = beginSession(newSession("practice", shuffle(ids).map(id => Q_BY_ID[id]), null, "review"));
   store.set(KEYS.practice, state.session);
   go("quiz");
 }

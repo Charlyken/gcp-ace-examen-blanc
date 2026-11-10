@@ -6,6 +6,7 @@ import { APP_ID, buildExport, parseImport } from "../js/backup.js";
 import { reviewCard } from "../js/srs.js";
 import { dayStreak } from "../js/streak.js";
 import { addDays } from "../js/utils.js";
+import { awardAnswer, newXp } from "../js/xp.js";
 
 const TODAY = "2026-11-10";
 const known = id => QUESTIONS.some(q => q.id === id);
@@ -21,8 +22,8 @@ function planning() {
 
 describe("buildExport", () => {
   test("contient l'identifiant de l'application, la version, la date et toutes les sections", () => {
-    const e = buildExport({ profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3] }, 1, new Date("2026-11-10T10:00:00Z"));
-    assert.deepEqual(e, { app: APP_ID, version: 1, exportedAt: "2026-11-10T10:00:00.000Z", profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3] });
+    const e = buildExport({ profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3], xp: { total: 40 } }, 1, new Date("2026-11-10T10:00:00Z"));
+    assert.deepEqual(e, { app: APP_ID, version: 1, exportedAt: "2026-11-10T10:00:00.000Z", profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3], xp: { total: 40 } });
   });
 });
 
@@ -81,6 +82,27 @@ describe("export puis import : la série de jours est conservée", () => {
     assert.equal("goal" in a["2026-11-08"], false);
     assert.equal("goal" in a["2026-11-09"], false);
     assert.equal(a["2026-11-07"].goal, 200);
+  });
+});
+
+describe("export puis import : les points d'expérience sont conservés", () => {
+  const xp = () => { let x = newXp(); for (const id of ["a", "b", "c"]) x = awardAnswer(x, id, true, TODAY).xp; return x; };
+  test("total et questions déjà récompensées aujourd'hui reviennent à l'identique (pas de nouvelle triche par réimport)", () => {
+    const back = roundTrip({ profile: DEFAULT_PROFILE, stats: {}, activity: {}, history: [], xp: xp() });
+    assert.deepEqual(back.xp, xp());
+    assert.equal(awardAnswer(back.xp, "a", true, TODAY).gained, 0);
+  });
+  test("un export fait un autre jour garde le total mais oublie les questions du jour passé", () => {
+    const back = roundTrip({ profile: DEFAULT_PROFILE, stats: {}, activity: {}, history: [], xp: xp() }, "2026-11-12");
+    assert.equal(back.xp.total, 30); assert.deepEqual(back.xp.ids, []);
+  });
+  test("un ancien export sans XP laisse les XP actuels intacts (section absente)", () => {
+    const { xp: x } = parseImport(JSON.stringify({ app: APP_ID, stats: {} }), { isKnownId: known, today: TODAY });
+    assert.equal(x, undefined);
+  });
+  test("XP invalide : nettoyé", () => {
+    const { xp: x } = parseImport(JSON.stringify({ app: APP_ID, xp: { total: -5, day: "x", ids: [1] } }), { isKnownId: known, today: TODAY });
+    assert.deepEqual(x, newXp());
   });
 });
 

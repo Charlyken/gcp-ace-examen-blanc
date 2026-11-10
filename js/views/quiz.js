@@ -101,7 +101,7 @@ export function renderQuiz() {
       <p class="qtext" id="qtext">${fmt(q.q)}</p>
       <fieldset class="options" aria-labelledby="qtext">${options}</fieldset>
       ${locked ? `<div class="feedback ${good ? "ok" : "ko"}" role="status">
-          <strong>${good ? IC.check + "Correct" + (streakInfo(s).streak >= 3 ? " · " + streakInfo(s).streak + " d'affilée" : "") : IC.cross + "Pas tout à fait"}</strong>
+          <strong>${good ? IC.check + "Correct" + (streakInfo(s).streak >= 3 ? " · " + streakInfo(s).streak + " d'affilée" : "") : IC.cross + "Pas tout à fait"}${s.xp && s.xp.gain && s.xp.gain[id] ? ` <span class="xp-chip">+${s.xp.gain[id]} XP</span>` : ""}</strong>
           <p>${fmt(q.explain)}</p>${docLinkHTML(q)}</div>` : ""}
       <div class="row spread actions sticky-bar">
         <button class="btn btn-ghost" data-action="prev" aria-label="Question précédente" ${s.current === 0 ? "disabled" : ""}>${IC.prev}<span class="hide-sm">Précédente</span></button>
