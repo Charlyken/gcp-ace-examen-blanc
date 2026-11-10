@@ -34,6 +34,9 @@ Tout est dans le tableau `QUESTIONS` de `questions.js` :
 {
   id: "d3-17",            // identifiant unique, jamais réutilisé
   domain: 3,              // 1 à 5, voir DOMAINS
+  topic: "gke",           // sujet : une clé de TOPICS
+  difficulty: 2,          // 1 facile, 2 moyen, 3 difficile (échelle ci-dessous)
+  doc: "https://docs.cloud.google.com/…",  // page de documentation officielle
   q: "Énoncé…",           // `entre backticks` = affiché en code
   options: ["…", "…"],    // 4 ou 5 options, mélangées à l'affichage
   correct: [0],           // un index = réponse unique, plusieurs = réponses multiples
@@ -43,13 +46,33 @@ Tout est dans le tableau `QUESTIONS` de `questions.js` :
 
 Les poids des domaines sont dans `DOMAINS`, la taille de l'examen, la durée et le seuil dans `CONFIG`.
 
+**Sujet (`topic`)** : une clé de l'objet `TOPICS` de `questions.js` (par ex. `iam`, `gke`, `storage`). Un sujet peut couvrir plusieurs domaines ; pour en créer un, déclare-le dans `TOPICS` (le validateur refuse les sujets inconnus). Ils serviront au parcours guidé et à l'adaptation de la difficulté.
+
+**Difficulté (`difficulty`)** :
+
+| Niveau | Critère |
+|---|---|
+| 1 facile | savoir direct : un service, une commande ou un outil ; options nettement distinctes |
+| 2 moyen | scénario avec une contrainte principale ; choix entre services proches ou réglage précis |
+| 3 difficile | plusieurs contraintes, piège ou subtilité de configuration |
+
+Une question à réponses multiples est au moins de niveau 2. Vise un équilibre d'environ 1/3 par niveau.
+
+**Documentation (`doc`)** : lien vers la page officielle qui justifie la réponse (`docs.cloud.google.com`, ou `kubernetes.io` pour les concepts Kubernetes). Il s'affiche sous l'explication (« Voir la documentation officielle »). Les anciennes adresses `cloud.google.com/…` redirigent vers `docs.cloud.google.com/…` : utilise l'adresse finale. Vérifie les liens (accès réseau nécessaire) :
+
+```bash
+npm run check-links
+```
+
+Il échoue si un lien ne répond pas et signale les redirections avec l'adresse à utiliser. Il n'est pas lancé en CI (dépend du réseau).
+
 Après chaque ajout, lance les vérifications (Node 20+, aucune installation) :
 
 ```bash
 npm test
 ```
 
-Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options sans doublon, explication présente, backticks fermés, pas de référence à une option par sa lettre. Il signale aussi en avertissement les domaines trop peu fournis et le biais « la bonne réponse est la plus longue ». La même vérification tourne en CI (`.github/workflows/ci.yml`).
+Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options sans doublon, explication présente, backticks fermés, pas de référence à une option par sa lettre, `topic` connu, `difficulty` de 1 à 3 (au moins 2 pour une réponse multiple), `doc` en https vers un hôte autorisé. Il signale aussi en avertissement les domaines trop peu fournis, le biais « la bonne réponse est la plus longue », les sujets sans question et une difficulté trop rare. Les règles sont dans `scripts/validation.js` (testées dans `tests/validation.test.js`). La même vérification tourne en CI (`.github/workflows/ci.yml`).
 
 ## Tests
 
@@ -69,10 +92,10 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 |---|---|
 | `index.html` | Squelette de la page, charge `js/main.js` |
 | `styles.css` | Styles |
-| `questions.js` | Domaines (`DOMAINS`) et banque de questions (`QUESTIONS`), module ES |
+| `questions.js` | Domaines (`DOMAINS`), sujets (`TOPICS`) et banque de questions (`QUESTIONS`), module ES |
 | `js/main.js` | Point d'entrée : branche les écouteurs et affiche la première vue |
 | `js/config.js` | Réglages (`CONFIG`), clés de stockage, `STORAGE_VERSION`, profil par défaut |
-| `js/data.js` | Accès à la banque de questions (`DOMAINS`, `QUESTIONS`, `Q_BY_ID`) |
+| `js/data.js` | Accès à la banque de questions (`DOMAINS`, `TOPICS`, `QUESTIONS`, `Q_BY_ID`) |
 | `js/utils.js` | Utilitaires purs (échappement, mélange, chrono, pourcentages…) |
 | `js/logic.js` | **Logique métier pure** : tirage de l'examen, correction, calcul des résultats, statistiques du tableau de bord, validation du profil |
 | `js/storage.js` | Accès à `localStorage` (tolérant à son absence) et migration de version |
@@ -83,7 +106,9 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `js/data-io.js` | Export et import JSON des données |
 | `js/views/` | Une vue par fichier : `home`, `quiz` (questions et vérification), `results`, `dashboard`, `profile`, `shared` (barre de navigation) |
 | `js/ui/` | `icons` (SVG), `dialog` (dialogue et message furtif), `effects` (confettis, ondes, compteur) |
-| `scripts/validate-questions.js` | Validateur de la banque |
+| `scripts/validate-questions.js` | Lance le validateur de la banque et affiche le rapport |
+| `scripts/validation.js` | Règles de validation (fonction pure `validateBank`) |
+| `scripts/check-links.js` | Vérifie que les liens `doc` répondent (`npm run check-links`, réseau) |
 | `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
 | `tests/` | Tests unitaires (`*.test.js`) et aides (`helpers.js`) |
 

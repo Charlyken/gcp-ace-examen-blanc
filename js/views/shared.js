@@ -14,3 +14,9 @@ export function appbarHTML(active) {
       <button class="avatar-btn" data-action="nav" data-view="profile" aria-label="Ouvrir le profil"><span class="avatar d${profile.color}">${esc(initialsOf(profile.name))}</span></button>
     </div></nav>`;
 }
+
+// Lien vers la documentation officielle qui justifie la réponse (vide si la question n'en a pas).
+export function docLinkHTML(q) {
+  if (!q.doc) return "";
+  return `<a class="doclink" href="${esc(q.doc)}" target="_blank" rel="noopener noreferrer">Voir la documentation officielle${IC.external}<span class="sr"> (s'ouvre dans un nouvel onglet)</span></a>`;
+}

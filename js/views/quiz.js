@@ -6,6 +6,7 @@ import { state } from "../state.js";
 import { esc, fmt, clock, pct, isCorrect } from "../utils.js";
 import { counters, streakInfo } from "../logic.js";
 import { IC } from "../ui/icons.js";
+import { docLinkHTML } from "./shared.js";
 
 function topbarHTML() {
   const s = state.session;
@@ -101,7 +102,7 @@ export function renderQuiz() {
       <fieldset class="options" aria-labelledby="qtext">${options}</fieldset>
       ${locked ? `<div class="feedback ${good ? "ok" : "ko"}" role="status">
           <strong>${good ? IC.check + "Correct" + (streakInfo(s).streak >= 3 ? " · " + streakInfo(s).streak + " d'affilée" : "") : IC.cross + "Pas tout à fait"}</strong>
-          <p>${fmt(q.explain)}</p></div>` : ""}
+          <p>${fmt(q.explain)}</p>${docLinkHTML(q)}</div>` : ""}
       <div class="row spread actions sticky-bar">
         <button class="btn btn-ghost" data-action="prev" aria-label="Question précédente" ${s.current === 0 ? "disabled" : ""}>${IC.prev}<span class="hide-sm">Précédente</span></button>
         <button class="btn btn-flag" data-action="flag" aria-pressed="${!!s.flags[id]}">${IC.flag}<span>${s.flags[id] ? "Marquée" : "À revoir"}</span></button>

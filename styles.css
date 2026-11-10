@@ -298,6 +298,9 @@ td.r, th.r { text-align: right; }
 .feedback > strong { display: inline-flex; align-items: center; gap: 8px; font: 500 1rem var(--font-display); }
 .feedback.ok { background: var(--good-soft); } .feedback.ok > strong { color: var(--good); }
 .feedback.ko { background: var(--bad-soft); }  .feedback.ko > strong { color: var(--bad); }
+.doclink { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font: 500 .9rem var(--font-display); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.doclink:hover { text-decoration-thickness: 2px; }
+.doclink .ic { width: 16px; height: 16px; }
 
 /* --- Grille de navigation --- */
 .nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 8px; }
