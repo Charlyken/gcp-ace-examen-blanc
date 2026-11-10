@@ -8,7 +8,8 @@
     passPct: 70,           // seuil de réussite indicatif
     lowTimeMs: 10 * 60000  // le chrono passe en rouge sous ce délai
   };
-  const KEYS = { exam: "ace.session.exam", practice: "ace.session.practice", history: "ace.history", stats: "ace.stats", version: "ace.version" };
+  const KEYS = { exam: "ace.session.exam", practice: "ace.session.practice", history: "ace.history", stats: "ace.stats", activity: "ace.activity", profile: "ace.profile", version: "ace.version" };
+  const HISTORY_MAX = 20;    // nombre d'examens blancs conservés dans l'historique
   // À incrémenter dès que le format des données sauvegardées change : les anciennes données sont alors purgées.
   const STORAGE_VERSION = 1;
   const LETTERS = "ABCDE";
@@ -24,7 +25,13 @@
     cross: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
     flag: svg('<path d="M5 21V4h11l-1.5 4 1.5 4H5"/>'),
     next: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
-    prev: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>')
+    prev: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+    cloud: svg('<path d="M7 18a4 4 0 0 1-.5-7.97A6 6 0 0 1 18 8.5 3.5 3.5 0 0 1 17.5 18Z"/>'),
+    cal: svg('<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+    fire: svg('<path d="M12 21c-4 0-6.5-2.7-6.5-6.2 0-2.6 1.6-4.4 2.8-5.8.3 1.3 1 2.1 1.9 2.4C10.3 8.8 11 5.5 14 3c0 3 1.4 4.3 2.6 5.8 1.3 1.6 1.9 3 1.9 5 0 4-2.6 7.2-6.5 7.2z"/>'),
+    edit: svg('<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/>'),
+    download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
+    upload: svg('<path d="M12 15V4M7 9l5-5 5 5M5 20h14"/>')
   };
 
   /* ---------------- Stockage local (peut être indisponible) ---------------- */
@@ -36,15 +43,47 @@
 
   try {
     if (store.get(KEYS.version) !== STORAGE_VERSION) {
-      ["exam", "practice", "history", "stats"].forEach(k => store.del(KEYS[k]));
+      ["exam", "practice", "history", "stats", "activity"].forEach(k => store.del(KEYS[k]));
       store.set(KEYS.version, STORAGE_VERSION);
     }
   } catch (e) { /* stockage indisponible : on continue en mémoire */ }
 
   // Dernier résultat connu par question, toutes sessions confondues : { id: { n: essais, ok: bool } }
   let stats = store.get(KEYS.stats) || {};
-  function record(id, ok) { const p = stats[id] || { n: 0 }; stats[id] = { n: p.n + 1, ok: !!ok }; }
-  const saveStats = () => store.set(KEYS.stats, stats);
+  // Activité par jour : { "AAAA-MM-JJ": { n: réponses validées, ok: bonnes réponses } }
+  let activity = store.get(KEYS.activity) || {};
+  const dayKey = d => { d = d || new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  function record(id, ok) {
+    const p = stats[id] || { n: 0 }; stats[id] = { n: p.n + 1, ok: !!ok };
+    const k = dayKey(), a = activity[k] || { n: 0, ok: 0 }; a.n++; if (ok) a.ok++; activity[k] = a;
+  }
+  const saveStats = () => { store.set(KEYS.stats, stats); store.set(KEYS.activity, activity); };
+
+  /* ---------------- Profil : identité, objectifs et préférences ---------------- */
+  const DEFAULT_PROFILE = { name: "", color: 1, target: 80, examDate: "", daily: 10, theme: "auto" };
+  const AVATAR_COLORS = [1, 2, 3, 4, 5];                       // réutilise les couleurs des domaines (.d1 à .d5)
+  const THEMES = { auto: "Système", light: "Clair", dark: "Sombre" };
+  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+  const num = (v, def, lo, hi) => { const n = Number(v); return v === "" || v == null || !Number.isFinite(n) ? def : clamp(Math.round(n), lo, hi); };
+  // Ne conserve que des valeurs valides : utilisé au chargement, à la saisie et à l'import.
+  function sanitizeProfile(p) {
+    p = p && typeof p === "object" ? p : {};
+    return {
+      name: String(p.name || "").trim().slice(0, 30),
+      color: AVATAR_COLORS.includes(Number(p.color)) ? Number(p.color) : DEFAULT_PROFILE.color,
+      target: num(p.target, DEFAULT_PROFILE.target, 50, 100),
+      examDate: /^\d{4}-\d{2}-\d{2}$/.test(p.examDate || "") ? p.examDate : "",
+      daily: num(p.daily, DEFAULT_PROFILE.daily, 1, 200),
+      theme: THEMES[p.theme] ? p.theme : "auto"
+    };
+  }
+  let profile = sanitizeProfile(store.get(KEYS.profile));
+  const saveProfile = () => store.set(KEYS.profile, profile);
+  const initials = () => (profile.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("") || "?").toUpperCase();
+  function applyTheme() {
+    if (profile.theme === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", profile.theme);
+  }
 
   /* ---------------- Utilitaires ---------------- */
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -56,7 +95,7 @@
   const isCorrect = (q, answer) => sameSet(q.correct, answer || []);
 
   /* ---------------- État ---------------- */
-  let view = "home";       // home | quiz | results
+  let view = "home";       // home | dashboard | profile | quiz | review | results
   let session = null;      // session en cours d'affichage
   let timerId = null, endTime = 0;
   let reviewFilter = "wrong";
@@ -158,8 +197,8 @@
       const r = compute(session);
       r.items.forEach(i => record(i.id, i.status === "ok")); saveStats();
       const h = store.get(KEYS.history) || [];
-      h.unshift({ date: session.finishedAt, ok: r.ok, total: r.total, pct: r.pct });
-      store.set(KEYS.history, h.slice(0, 10));
+      h.unshift({ date: session.finishedAt, ok: r.ok, total: r.total, pct: r.pct, usedMs: CONFIG.examMinutes * 60000 - (session.remainingMs || 0) });
+      store.set(KEYS.history, h.slice(0, HISTORY_MAX));
     }
     closeDialog();
     reviewFilter = "wrong"; celebrate = true;
@@ -179,7 +218,29 @@
     if (view === "quiz" && session) renderQuiz();
     else if (view === "review" && session) renderReview();
     else if (view === "results" && session) renderResults();
+    else if (view === "dashboard") renderDashboard();
+    else if (view === "profile") renderProfile();
     else renderHome();
+  }
+
+  /* ---------------- Barre de navigation (accueil, tableau de bord, profil) ---------------- */
+  const NAV = [["home", "Accueil"], ["dashboard", "Tableau de bord"], ["profile", "Profil"]];
+  function appbarHTML(active) {
+    return `<div class="strip"></div>
+    <nav class="appbar" aria-label="Navigation principale"><div class="appbar-in">
+      <span class="brand">${IC.cloud}<span>GCP ACE</span></span>
+      <div class="navlinks">${NAV.map(([v, l]) => `<button class="navlink${active === v ? " on" : ""}" data-action="nav" data-view="${v}"${active === v ? ' aria-current="page"' : ""}>${l}</button>`).join("")}</div>
+      <button class="avatar-btn" data-action="nav" data-view="profile" aria-label="Ouvrir le profil"><span class="avatar d${profile.color}">${esc(initials())}</span></button>
+    </div></nav>`;
+  }
+  // Jours restants avant la date d'examen du profil (null si non renseignée, négatif si passée).
+  function daysToExam() {
+    if (!profile.examDate) return null;
+    return Math.round((new Date(profile.examDate + "T12:00:00") - new Date(dayKey() + "T12:00:00")) / 86400000);
+  }
+  function countdownText() {
+    const d = daysToExam();
+    return d === null ? "" : d > 1 ? `J-${d} avant ton examen` : d === 1 ? "Examen demain" : d === 0 ? "Examen aujourd'hui" : `Examen passé il y a ${-d} jour${-d > 1 ? "s" : ""}`;
   }
 
   /* ======================= VUE : ACCUEIL ======================= */
@@ -213,12 +274,13 @@
       : `<div class="row"><button class="btn btn-primary" data-action="new-exam">Démarrer l'examen ${IC.next}</button>
          ${exam && exam.finished ? `<button class="btn" data-action="show-results" data-mode="exam">Dernier résultat</button>` : ""}</div>`;
 
+    const countdown = countdownText();
     app.innerHTML = `
-    <div class="strip"></div>
+    ${appbarHTML("home")}
     <main class="wrap stagger">
       <header class="hero" id="hero">
         <div class="hero-text">
-          <span class="badge-top"><i></i>Entraînement non officiel</span>
+          <span class="badge-top"><i></i>${profile.name ? `Bonjour ${esc(profile.name)}` : "Entraînement non officiel"}${countdown ? ` · ${countdown}` : ""}</span>
           <h1>Prépare ton Associate Cloud Engineer</h1>
           <p class="muted">${QUESTIONS.length} questions sur les 5 domaines de l'examen Google Cloud, dont ${multi} à réponses multiples. Ta progression reste enregistrée dans ce navigateur.</p>
           <div class="row">
@@ -268,10 +330,10 @@
       </section>
 
       ${history.length ? `<section class="card" aria-labelledby="h-hist">
-        <h2 id="h-hist">Derniers examens blancs</h2>
-        <div style="overflow-x:auto"><table>
+        <div class="row spread"><h2 id="h-hist">Derniers examens blancs</h2><button class="btn btn-sm" data-action="nav" data-view="dashboard">Tableau de bord ${IC.next}</button></div>
+        <div class="tscroll"><table>
           <thead><tr><th>Date</th><th class="r">Score</th><th class="r">Réussite</th><th>Résultat</th></tr></thead>
-          <tbody>${history.map(h => `<tr><td>${new Date(h.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td><td class="r num">${h.ok}/${h.total}</td><td class="r num">${h.pct} %</td><td><span class="pill ${h.pct >= CONFIG.passPct ? "ok" : "ko"}">${h.pct >= CONFIG.passPct ? "Au-dessus du seuil" : "Sous le seuil"}</span></td></tr>`).join("")}</tbody>
+          <tbody>${history.slice(0, 5).map(h => `<tr><td>${new Date(h.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td><td class="r num">${h.ok}/${h.total}</td><td class="r num">${h.pct} %</td><td><span class="pill ${h.pct >= CONFIG.passPct ? "ok" : "ko"} mini">${h.pct >= CONFIG.passPct ? "Au-dessus du seuil" : "Sous le seuil"}</span></td></tr>`).join("")}</tbody>
         </table></div>
       </section>` : ""}
 
@@ -550,6 +612,253 @@
     }
   }
 
+  /* ======================= VUE : TABLEAU DE BORD ======================= */
+  function dashData() {
+    const history = store.get(KEYS.history) || [];
+    const doms = Object.keys(DOMAINS).map(d => {
+      const qs = QUESTIONS.filter(q => q.domain == d), tried = qs.filter(q => stats[q.id]), ok = tried.filter(q => stats[q.id].ok);
+      return { d, total: qs.length, tried: tried.length, ok: ok.length, rate: pct(ok.length, tried.length), mastery: pct(ok.length, qs.length) };
+    });
+    const tried = QUESTIONS.filter(q => stats[q.id]);
+    const errs = tried.filter(q => !stats[q.id].ok).sort((a, b) => stats[b.id].n - stats[a.id].n);
+    const days = Object.values(activity);
+    const attempts = Object.values(stats).reduce((s, v) => s + (v.n || 0), 0);
+    const actN = days.reduce((s, a) => s + a.n, 0), actOk = days.reduce((s, a) => s + a.ok, 0);
+    const best = history.reduce((m, h) => Math.max(m, h.pct), 0);
+    const avg = history.length ? Math.round(history.reduce((s, h) => s + h.pct, 0) / history.length) : 0;
+    const today = activity[dayKey()] || { n: 0, ok: 0 };
+    // Jours consécutifs avec au moins une réponse validée (aujourd'hui compris s'il est actif).
+    let streak = 0;
+    for (let i = 0; i < 400; i++) { const d = new Date(); d.setDate(d.getDate() - i); const a = activity[dayKey(d)]; if (a && a.n) streak++; else if (i) break; }
+    return { history, doms, tried: tried.length, mastered: tried.length - errs.length, errs, attempts, actN, actOk, best, avg, today, streak };
+  }
+
+  // Courbe des derniers examens blancs (SVG en ligne), avec le seuil et l'objectif personnel.
+  function scoreChart(history) {
+    const pts = history.slice(0, 10).reverse();
+    const W = 640, H = 230, L = 40, R = 16, T = 24, B = 36;
+    const x = i => pts.length < 2 ? (L + W - R) / 2 : L + i * (W - L - R) / (pts.length - 1);
+    const y = v => T + (H - T - B) * (1 - v / 100);
+    const line = pts.map((h, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(h.pct).toFixed(1)).join(" ");
+    const area = `${line} L${x(pts.length - 1).toFixed(1)} ${y(0)} L${x(0).toFixed(1)} ${y(0)} Z`;
+    const fdate = t => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Scores des ${pts.length} derniers examens blancs">
+      ${[0, 25, 50, 75, 100].map(v => `<line class="grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`).join("")}
+      <line class="thr" x1="${L}" x2="${W - R}" y1="${y(CONFIG.passPct)}" y2="${y(CONFIG.passPct)}"/><text class="axis thr-t" x="${W - R}" y="${y(CONFIG.passPct) - 5}" text-anchor="end">Seuil ${CONFIG.passPct} %</text>
+      ${profile.target !== CONFIG.passPct ? `<line class="tgt" x1="${L}" x2="${W - R}" y1="${y(profile.target)}" y2="${y(profile.target)}"/><text class="axis tgt-t" x="${L + 4}" y="${y(profile.target) - 5}">Objectif ${profile.target} %</text>` : ""}
+      ${pts.length > 1 ? `<path class="area" d="${area}"/><path class="line" d="${line}"/>` : ""}
+      ${pts.map((h, i) => `<circle class="dot ${h.pct >= CONFIG.passPct ? "ok" : "ko"}" cx="${x(i).toFixed(1)}" cy="${y(h.pct).toFixed(1)}" r="5"><title>${fdate(h.date)} : ${h.pct} %</title></circle>
+        <text class="val" x="${x(i).toFixed(1)}" y="${(y(h.pct) - 11).toFixed(1)}" text-anchor="middle">${h.pct}</text>
+        <text class="axis" x="${x(i).toFixed(1)}" y="${H - 12}" text-anchor="middle">${fdate(h.date)}</text>`).join("")}
+    </svg>`;
+  }
+
+  // Barres des 14 derniers jours : hauteur = réponses validées, partie colorée = bonnes réponses.
+  function activityStrip() {
+    const days = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); return { d, a: activity[dayKey(d)] || { n: 0, ok: 0 } }; });
+    const max = Math.max(1, ...days.map(x => x.a.n));
+    return `<div class="actstrip" role="img" aria-label="Réponses validées sur les 14 derniers jours">
+      ${days.map(({ d, a }, i) => `<div class="actday${i === 13 ? " today" : ""}" title="${d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })} : ${a.n} réponse${a.n > 1 ? "s" : ""}, ${a.ok} juste${a.ok > 1 ? "s" : ""}">
+        <span class="actbar"><i style="height:${a.n ? Math.max(6, Math.round(a.n / max * 100)) : 0}%"><b style="height:${a.n ? Math.round(a.ok / a.n * 100) : 0}%"></b></i></span>
+        <span class="actlbl">${"DLMMJVS"[d.getDay()]}</span></div>`).join("")}
+    </div>`;
+  }
+
+  function renderDashboard() {
+    const d = dashData();
+    const last = d.history[0], prev = d.history[1];
+    const trend = last && prev ? last.pct - prev.pct : null;
+    const daysLeft = daysToExam(), countdown = countdownText();
+    const left = Math.max(0, profile.daily - d.today.n);
+    const rate = d.actN ? pct(d.actOk, d.actN) : pct(d.mastered, d.tried);
+    const n = d.history.length, nShown = Math.min(10, n);
+    const fdate = t => new Date(t).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+    app.innerHTML = `
+    ${appbarHTML("dashboard")}
+    <main class="wrap stagger">
+      <header class="card dash-head">
+        <span class="avatar xl d${profile.color}" aria-hidden="true">${esc(initials())}</span>
+        <div class="dash-id">
+          <span class="tag">Tableau de bord</span>
+          <h1>${profile.name ? `Bonjour ${esc(profile.name)}` : "Ta progression"}</h1>
+          <div class="facts">
+            <span class="fact${daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 ? " warn" : ""}">${IC.cal}${countdown || "Date d'examen non renseignée"}</span>
+            <span class="fact">${IC.fire}<b>${d.streak}</b> jour${d.streak > 1 ? "s" : ""} d'affilée</span>
+            <span class="fact">${IC.target}Score visé <b>${profile.target} %</b></span>
+          </div>
+        </div>
+        <button class="btn btn-sm dash-edit" data-action="nav" data-view="profile">${IC.edit} Modifier le profil</button>
+        <div class="goal">
+          <div class="row spread"><strong class="small">Objectif du jour</strong><span class="small num muted">${d.today.n}/${profile.daily} questions</span></div>
+          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${profile.daily}" aria-valuenow="${Math.min(d.today.n, profile.daily)}" aria-label="Objectif quotidien"><i class="${left ? "" : "ok"}" style="width:${pct(Math.min(d.today.n, profile.daily), profile.daily)}%"></i></div>
+          <p class="small muted">${left ? `Encore ${left} question${left > 1 ? "s" : ""} à valider aujourd'hui.` : "Objectif quotidien atteint, bravo !"}</p>
+        </div>
+      </header>
+
+      <section class="kpis" aria-label="Chiffres clés">
+        <div class="kpi accent"><span class="lbl">Examens blancs</span><span class="val num">${n}</span><span class="sub">${n ? `Meilleur score : <b class="num">${d.best} %</b> · moyenne <b class="num">${d.avg} %</b>` : "Aucun examen passé"}</span></div>
+        <div class="kpi${last ? (last.pct >= CONFIG.passPct ? " good" : " bad") : ""}"><span class="lbl">Dernier score</span><span class="val num">${last ? last.pct + " %" : "–"}</span><span class="sub">${trend === null ? (last ? `${last.ok}/${last.total} bonnes réponses` : "Lance un premier examen blanc") : trend > 0 ? `↗ +${trend} pts par rapport au précédent` : trend < 0 ? `↘ ${trend} pts par rapport au précédent` : "Stable par rapport au précédent"}</span></div>
+        <div class="kpi"><span class="lbl">Questions maîtrisées</span><span class="val num">${d.mastered}<span class="den">/${QUESTIONS.length}</span></span><span class="sub">${d.tried ? `${d.tried} abordée${d.tried > 1 ? "s" : ""} · ${d.errs.length} à retravailler` : "Aucune question abordée"}</span></div>
+        <div class="kpi"><span class="lbl">Réponses validées</span><span class="val num">${d.attempts}</span><span class="sub">${d.attempts ? `Taux de réussite : <b class="num">${rate} %</b>` : "En entraînement et en examen"}</span></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-chart">
+        <div class="row spread"><h2 id="h-chart">Évolution des scores</h2>${n ? `<span class="small muted">${nShown} dernier${nShown > 1 ? "s" : ""} examen${nShown > 1 ? "s" : ""} blanc${nShown > 1 ? "s" : ""}</span>` : ""}</div>
+        ${n ? scoreChart(d.history) + `<div class="legend"><span><i class="sw-ok"></i>Au-dessus du seuil</span><span><i class="sw-ko"></i>Sous le seuil</span><span><i class="ln-thr"></i>Seuil ${CONFIG.passPct} %</span>${profile.target !== CONFIG.passPct ? `<span><i class="ln-tgt"></i>Objectif ${profile.target} %</span>` : ""}</div>`
+          : `<div class="note empty"><p class="small"><strong>Aucun examen blanc pour l'instant.</strong> Passe un premier examen : ta courbe de progression apparaîtra ici.</p><div class="row"><button class="btn btn-primary btn-sm" data-action="new-exam">Lancer un examen blanc ${IC.next}</button></div></div>`}
+      </section>
+
+      <section class="card" aria-labelledby="h-act">
+        <div class="row spread"><h2 id="h-act">Activité des 14 derniers jours</h2><span class="small muted">Réponses validées par jour, bonnes réponses en couleur</span></div>
+        ${activityStrip()}
+        ${d.actN ? "" : `<p class="small muted">L'activité est comptée à partir de maintenant, à chaque réponse validée en entraînement ou en examen.</p>`}
+      </section>
+
+      <section class="card" aria-labelledby="h-dtab">
+        <div class="row spread"><h2 id="h-dtab">Maîtrise par domaine</h2><span class="small muted">Dernière tentative sur chaque question</span></div>
+        <div class="tscroll"><table class="dtable">
+          <thead><tr><th>Domaine</th><th class="r">Poids</th><th class="r">Abordées</th><th class="r">Réussies</th><th class="r">Taux</th><th>Maîtrise</th><th></th></tr></thead>
+          <tbody>${d.doms.map(x => `<tr class="d${x.d}">
+            <td><span class="dcell"><span class="dnum">${x.d}</span><span>${esc(DOMAINS[x.d].name)}</span></span></td>
+            <td class="r num muted">${DOMAINS[x.d].weight} %</td>
+            <td class="r num">${x.tried}/${x.total}</td>
+            <td class="r num">${x.ok}</td>
+            <td class="r">${x.tried ? `<span class="pill ${x.rate >= CONFIG.passPct ? "ok" : "ko"} mini num">${x.rate} %</span>` : `<span class="muted">–</span>`}</td>
+            <td><span class="wbar" title="${x.mastery} % des questions du domaine réussies"><i style="width:${x.mastery}%"></i></span></td>
+            <td class="r"><button class="btn btn-ghost btn-sm" data-action="practice-domain" data-d="${x.d}">S'entraîner</button></td>
+          </tr>`).join("")}</tbody>
+          <tfoot><tr><td>Total</td><td class="r num muted">100 %</td><td class="r num">${d.tried}/${QUESTIONS.length}</td><td class="r num">${d.mastered}</td><td class="r num">${d.tried ? `${pct(d.mastered, d.tried)} %` : "–"}</td><td><span class="wbar"><i style="width:${pct(d.mastered, QUESTIONS.length)}%"></i></span></td><td></td></tr></tfoot>
+        </table></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-err">
+        <div class="row spread"><h2 id="h-err">Questions à retravailler</h2>${d.errs.length ? `<button class="btn btn-sm" data-action="new-errors">Revoir mes erreurs (${d.errs.length}) ${IC.next}</button>` : ""}</div>
+        ${d.errs.length ? `<ul class="errlist">${d.errs.slice(0, 6).map(q => `<li><span class="tag dtag d${q.domain}">${esc(DOMAINS[q.domain].short)}</span><span>${fmt(q.q.length > 140 ? q.q.slice(0, 140) + "…" : q.q)}</span><span class="small muted num">${stats[q.id].n} essai${stats[q.id].n > 1 ? "s" : ""}</span></li>`).join("")}</ul>${d.errs.length > 6 ? `<p class="small muted">… et ${d.errs.length - 6} autre${d.errs.length - 6 > 1 ? "s" : ""}.</p>` : ""}`
+          : `<p class="muted">${d.tried ? "Aucune erreur en attente : toutes les questions abordées ont été réussies à la dernière tentative." : "Commence un entraînement : tes erreurs apparaîtront ici pour être rejouées."}</p>`}
+      </section>
+
+      <section class="card" aria-labelledby="h-hist2">
+        <div class="row spread"><h2 id="h-hist2">Historique des examens blancs</h2>${n ? `<span class="small muted">${n} examen${n > 1 ? "s" : ""} · ${HISTORY_MAX} conservés au maximum</span>` : ""}</div>
+        ${n ? `<div class="tscroll"><table>
+          <thead><tr><th>#</th><th>Date</th><th class="r">Score</th><th class="r">Réussite</th><th class="r">Durée</th><th>Résultat</th></tr></thead>
+          <tbody>${d.history.map((h, i) => `<tr><td class="num muted">${n - i}</td><td>${fdate(h.date)}</td><td class="r num">${h.ok}/${h.total}</td><td class="r num"><b>${h.pct} %</b></td><td class="r num">${h.usedMs != null ? clock(h.usedMs) : "–"}</td><td class="row" style="gap:6px"><span class="pill ${h.pct >= CONFIG.passPct ? "ok" : "ko"} mini">${h.pct >= CONFIG.passPct ? "Au-dessus du seuil" : "Sous le seuil"}</span>${h.pct >= profile.target ? `<span class="pill ok mini">Objectif atteint</span>` : ""}</td></tr>`).join("")}</tbody>
+        </table></div>` : `<p class="muted">Aucun examen blanc terminé pour l'instant.</p>`}
+      </section>
+    </main>`;
+  }
+
+  /* ======================= VUE : PROFIL ======================= */
+  function renderProfile() {
+    const p = profile;
+    app.innerHTML = `
+    ${appbarHTML("profile")}
+    <main class="wrap stagger">
+      <header style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+        <span class="tag">Profil</span>
+        <h1>Ton profil</h1>
+        <p class="muted">Personnalise ton espace et tes objectifs. Tout est enregistré automatiquement dans ce navigateur, sans compte ni serveur.</p>
+      </header>
+      <form id="profile-form" class="pform" autocomplete="off" novalidate>
+        <section class="card" aria-labelledby="h-id">
+          <h2 id="h-id">Identité</h2>
+          <div class="prof-grid">
+            <div class="avatar-pick">
+              <span class="avatar xl d${p.color}" id="avatar-preview" aria-hidden="true">${esc(initials())}</span>
+              <div class="swatches" role="radiogroup" aria-label="Couleur de l'avatar">
+                ${AVATAR_COLORS.map(c => `<label class="swatch d${c}"><input type="radio" name="color" value="${c}" ${c === p.color ? "checked" : ""} aria-label="Couleur ${c}"><span></span></label>`).join("")}
+              </div>
+            </div>
+            <div class="fields">
+              <label class="field"><span>Prénom ou pseudo</span><input type="text" name="name" id="p-name" maxlength="30" value="${esc(p.name)}" placeholder="Ex. Alex"></label>
+              <label class="field"><span>Date de l'examen</span><input type="date" name="examDate" value="${esc(p.examDate)}"><small>Le compte à rebours s'affiche sur l'accueil et le tableau de bord.</small></label>
+            </div>
+          </div>
+        </section>
+        <section class="card" aria-labelledby="h-obj">
+          <h2 id="h-obj">Objectifs</h2>
+          <div class="fields two">
+            <label class="field"><span>Score visé (%)</span><input type="number" name="target" inputmode="numeric" min="50" max="100" step="1" value="${p.target}"><small>Le seuil indicatif de réussite reste à ${CONFIG.passPct} %.</small></label>
+            <label class="field"><span>Questions par jour</span><input type="number" name="daily" inputmode="numeric" min="1" max="200" step="1" value="${p.daily}"><small>Objectif quotidien suivi sur le tableau de bord.</small></label>
+          </div>
+        </section>
+        <section class="card" aria-labelledby="h-pref">
+          <h2 id="h-pref">Apparence</h2>
+          <div class="chips" role="radiogroup" aria-label="Thème">
+            ${Object.entries(THEMES).map(([k, l]) => `<label class="chip"><input type="radio" name="theme" value="${k}" ${p.theme === k ? "checked" : ""}><span>${l}</span></label>`).join("")}
+          </div>
+          <p class="small muted">« Système » suit le réglage clair ou sombre de ton appareil.</p>
+        </section>
+      </form>
+      <section class="card" aria-labelledby="h-data">
+        <h2 id="h-data">Tes données</h2>
+        <p class="small muted">Statistiques, historique et profil sont stockés uniquement dans ce navigateur. Exporte-les pour les sauvegarder ou les transférer sur un autre appareil.</p>
+        <div class="row">
+          <button class="btn" data-action="export">${IC.download} Exporter (JSON)</button>
+          <button class="btn" data-action="import">${IC.upload} Importer un export</button>
+          <input type="file" id="import-file" accept="application/json,.json" class="sr" tabindex="-1" aria-hidden="true">
+          <button class="btn btn-danger" data-action="ask-reset">Réinitialiser la progression</button>
+        </div>
+      </section>
+    </main>`;
+  }
+  // Lit le formulaire, nettoie, enregistre et répercute (thème, avatar, champs numériques corrigés).
+  function readProfileForm() {
+    const f = document.getElementById("profile-form"); if (!f) return;
+    const v = n => f.elements[n] ? f.elements[n].value : undefined;
+    profile = sanitizeProfile({ name: v("name"), color: v("color"), target: v("target"), examDate: v("examDate"), daily: v("daily"), theme: v("theme") });
+    saveProfile(); applyTheme();
+    if (f.elements.target) f.elements.target.value = profile.target;
+    if (f.elements.daily) f.elements.daily.value = profile.daily;
+    previewAvatar();
+  }
+  function previewAvatar() {
+    const f = document.getElementById("profile-form");
+    const name = f && f.elements.name ? f.elements.name.value : profile.name;
+    const color = f && f.elements.color && f.elements.color.value ? Number(f.elements.color.value) : profile.color;
+    const ini = (name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("") || "?").toUpperCase();
+    document.querySelectorAll("#avatar-preview, .appbar .avatar").forEach(a => { a.className = a.className.replace(/\bd\d\b/, "d" + color); a.textContent = ini; });
+  }
+
+  /* ---------------- Export / import des données ---------------- */
+  function exportData() {
+    const data = { app: "gcp-ace-examen-blanc", version: STORAGE_VERSION, exportedAt: new Date().toISOString(), profile, stats, activity, history: store.get(KEYS.history) || [] };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = `gcp-ace-progression-${dayKey()}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("Export téléchargé");
+  }
+  function importData(file) {
+    if (!file) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const d = JSON.parse(rd.result);
+        if (!d || d.app !== "gcp-ace-examen-blanc") throw new Error("format");
+        if (d.stats && typeof d.stats === "object")
+          stats = Object.fromEntries(Object.entries(d.stats).filter(([id, v]) => Q_BY_ID[id] && v && Number.isFinite(v.n)).map(([id, v]) => [id, { n: v.n, ok: !!v.ok }]));
+        if (d.activity && typeof d.activity === "object")
+          activity = Object.fromEntries(Object.entries(d.activity).filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && v && Number.isFinite(v.n)).map(([k, v]) => [k, { n: v.n, ok: Number.isFinite(v.ok) ? v.ok : 0 }]));
+        if (Array.isArray(d.history))
+          store.set(KEYS.history, d.history.filter(h => h && Number.isFinite(h.date) && Number.isFinite(h.pct) && Number.isFinite(h.ok) && Number.isFinite(h.total)).slice(0, HISTORY_MAX));
+        if (d.profile && typeof d.profile === "object") profile = sanitizeProfile(d.profile);
+        saveStats(); saveProfile(); applyTheme();
+        renderProfile(); toast("Données importées");
+      } catch (e) { toast("Fichier non reconnu"); }
+    };
+    rd.readAsText(file);
+  }
+
+  /* ---------------- Message furtif de confirmation ---------------- */
+  let toastTimer = null;
+  function toast(msg) {
+    let t = document.getElementById("toast");
+    if (!t) { t = document.createElement("div"); t.id = "toast"; t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
   /* ---------------- Effets : compteur, confettis, onde au clic, parallaxe ---------------- */
   function countUp(el, to, suffix) {
     if (!el || REDUCED) return;
@@ -658,6 +967,15 @@
     "resume": el => { session = loadSession(el.dataset.mode); if (!session || session.finished) { session = null; return renderHome(); } go("quiz"); startTimer(); },
     "show-results": el => { session = loadSession(el.dataset.mode); if (session) { reviewFilter = "wrong"; go("results"); } },
     "home": () => { session = null; go("home"); },
+    "nav": el => { session = null; go(el.dataset.view); },
+    "export": exportData,
+    "import": () => { const f = document.getElementById("import-file"); if (f) { f.value = ""; f.click(); } },
+    "ask-reset": () => openDialog("Réinitialiser la progression ?", "Statistiques, activité, historique des examens et sessions en cours seront effacés. Ton profil est conservé.", "Réinitialiser", "reset"),
+    "reset": () => {
+      ["exam", "practice", "history", "stats", "activity"].forEach(k => store.del(KEYS[k]));
+      stats = {}; activity = {}; session = null;
+      closeDialog(); go("profile"); toast("Progression réinitialisée");
+    },
     "quit": () => { save(); session = null; go("home"); },   // la session reste enregistrée pour être reprise
     "prev": () => move(session.current - 1),
     "next": () => move(session.current + 1),
@@ -728,11 +1046,16 @@
     } else if (t.closest && t.closest("#domain-chips")) updatePracticeCount();   // filtre par domaine
     else if (t.name === "pf") { preFilter = t.value; renderReview(); }           // filtre de vérification
     else if (t.name === "rf") { reviewFilter = t.value; renderResults(); }      // filtre de correction
+    else if (t.id === "import-file") importData(t.files && t.files[0]);          // import d'une sauvegarde
+    else if (t.closest && t.closest("#profile-form")) { readProfileForm(); toast("Profil enregistré"); }   // profil : enregistrement automatique
   });
+  document.addEventListener("input", e => { if (e.target.id === "p-name") previewAvatar(); });   // aperçu des initiales en direct
+  document.addEventListener("submit", e => { if (e.target.id === "profile-form") e.preventDefault(); });
 
   // Sauvegarde du temps restant quand l'onglet est quitté ou masqué.
   window.addEventListener("pagehide", save);
   document.addEventListener("visibilitychange", () => { if (document.hidden) save(); });
 
+  applyTheme();
   render();
 })();
