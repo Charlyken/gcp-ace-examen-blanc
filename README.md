@@ -14,6 +14,8 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 - Marquage des questions à revoir, raccourcis clavier (A à E, Entrée, flèches).
 - Progression et profil enregistrés dans le navigateur (`localStorage`), sans compte ni serveur.
 
+> **Contributeurs et agents Claude** : lis [`ROADMAP.md`](ROADMAP.md) avant de commencer. Il indique ce qui est fait, ce qui reste, dans quel ordre, et les règles de travail.
+
 ## Utilisation
 
 Ouvre `index.html` dans un navigateur. Pour une version en ligne, active GitHub Pages sur la branche `main` (Settings > Pages).
