@@ -9,8 +9,10 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 - **Examen blanc** : 50 questions tirées au hasard et réparties par domaine, chronomètre de 2 h, aucune correction avant la fin, écran de vérification avant l'envoi.
 - **Entraînement libre** : filtre par domaine, correction et explication après chaque réponse, série de bonnes réponses, reprise des questions ratées.
 - **Résultats** : score global, performance par domaine, correction détaillée des erreurs.
-- Marquage des questions à revoir, raccourcis clavier (A à E, Entrée, flèches), thème clair et sombre.
-- Progression enregistrée dans le navigateur (`localStorage`), sans compte.
+- **Tableau de bord** : chiffres clés (examens passés, dernier score et tendance, questions maîtrisées, taux de réussite), courbe des 10 derniers examens avec seuil et objectif, activité des 14 derniers jours, tableau de maîtrise par domaine, questions à retravailler, historique complet.
+- **Profil** : prénom et avatar, date d'examen (compte à rebours), score visé, objectif quotidien, thème (système, clair, sombre), export et import des données en JSON, réinitialisation de la progression.
+- Marquage des questions à revoir, raccourcis clavier (A à E, Entrée, flèches).
+- Progression et profil enregistrés dans le navigateur (`localStorage`), sans compte ni serveur.
 
 ## Utilisation
 
@@ -48,10 +50,10 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 | `index.html` | Squelette de la page |
 | `styles.css` | Styles |
 | `questions.js` | Domaines (`DOMAINS`) et banque de questions (`QUESTIONS`) |
-| `app.js` | Logique d'examen, rendu, sauvegarde locale |
+| `app.js` | Logique d'examen, tableau de bord, profil, rendu, sauvegarde locale |
 | `scripts/validate-questions.js` | Validateur de la banque |
 
-Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `app.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées.
+Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `app.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), dernier résultat par question (`ace.stats`), activité par jour (`ace.activity`), profil (`ace.profile`).
 
 ## Limites connues
 
