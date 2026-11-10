@@ -82,7 +82,7 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 2. `npm run check` : syntaxe des modules de `js/` et import Node des modules purs ;
 3. `npm run test:unit` : tests unitaires (`node --test`, runner intégré à Node) des dossiers `tests/`.
 
-Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (série de jours, répétition espacée…).
+Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `js/backup.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, planning de répétition espacée, migration des données, export et import, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (série de jours, XP…).
 
 Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique qui touche au DOM doit d'abord être extraite dans un module pur de `js/` pour rester testable.
 
@@ -99,11 +99,13 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `js/utils.js` | Utilitaires purs (échappement, mélange, chrono, pourcentages…) |
 | `js/logic.js` | **Logique métier pure** : tirage de l'examen, correction, calcul des résultats, statistiques du tableau de bord, validation du profil |
 | `js/storage.js` | Accès à `localStorage` (tolérant à son absence) et migration de version |
+| `js/srs.js` | **Répétition espacée** pure : planning de révision par question (`reviewCard`, `isDue`, migration des anciennes données) |
+| `js/backup.js` | Format et validation de l'export/import JSON (pur) |
 | `js/state.js` | État partagé (`state`), statistiques, activité, profil, thème |
 | `js/session.js` | Cycle de vie d'une session : chargement, sauvegarde, chrono, démarrage, fin |
 | `js/router.js` | Navigation entre vues |
 | `js/actions.js`, `js/events.js` | Actions `data-action` et écouteurs globaux (clic, clavier, formulaires) |
-| `js/data-io.js` | Export et import JSON des données |
+| `js/data-io.js` | Export et import JSON : lecture et écriture du fichier, messages (le format est dans `backup.js`) |
 | `js/views/` | Une vue par fichier : `home`, `quiz` (questions et vérification), `results`, `dashboard`, `profile`, `shared` (barre de navigation) |
 | `js/ui/` | `icons` (SVG), `dialog` (dialogue et message furtif), `effects` (confettis, ondes, compteur) |
 | `scripts/validate-questions.js` | Lance le validateur de la banque et affiche le rapport |
@@ -112,9 +114,11 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
 | `tests/` | Tests unitaires (`*.test.js`) et aides (`helpers.js`) |
 
-**Règle d'architecture** : `config`, `data`, `utils` et `logic` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
+**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
 
-Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), dernier résultat par question (`ace.stats`), activité par jour (`ace.activity`), profil (`ace.profile`).
+Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), carte de révision par question (`ace.stats`), activité par jour (`ace.activity`), profil (`ace.profile`).
+
+**Répétition espacée** : chaque question répondue a une carte `{ n, ok, ease, interval, reps, due, last, hist }` dans `ace.stats` (détail et règles en tête de `js/srs.js`). `n` et `ok` (nombre de réponses, dernier résultat) existaient avant : le tableau de bord et l'accueil les lisent toujours. Le planning suit une variante de SM-2 adaptée à une réponse juste/fausse : erreur = revue le lendemain avec une facilité réduite ; réussites à l'échéance = intervalles 1 jour, 6 jours, puis × facilité (plafonné à 180 jours) ; réussite avant l'échéance = comptée mais sans avancer le planning. Chaque réponse validée (entraînement) ou question d'un examen terminé met la carte à jour via `record()` (`js/state.js`). Les anciennes entrées `{ n, ok }` sont migrées au chargement et à l'import (juste = à revoir demain, fausse = à revoir aujourd'hui) et réécrites aussitôt, sans changer `STORAGE_VERSION` (son incrément purgerait la progression). L'export JSON contient le planning, et l'import le restitue.
 
 ## Limites connues
 
