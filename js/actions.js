@@ -5,8 +5,9 @@ import { state, saveStats, record } from "./state.js";
 import { store } from "./storage.js";
 import { shuffle, isCorrect } from "./utils.js";
 import { newSession, counters } from "./logic.js";
+import { newXp } from "./xp.js";
 import { exportData } from "./data-io.js";
-import { loadSession, save, startTimer, startExam, startPractice, startReview, move, finish } from "./session.js";
+import { loadSession, save, startTimer, startExam, startPractice, startReview, move, finish, beginSession, awardForAnswer } from "./session.js";
 import { go } from "./router.js";
 import { renderQuiz, refreshChrome } from "./views/quiz.js";
 import { renderHome, selectedDomains, updatePracticeCount } from "./views/home.js";
@@ -28,7 +29,7 @@ export const actions = {
   "new-errors": () => {                                    // rejoue les questions ratées à la dernière tentative
     const qs = shuffle(QUESTIONS.filter(q => state.stats[q.id] && !state.stats[q.id].ok));
     if (!qs.length) return;
-    state.session = newSession("practice", qs); store.set(KEYS.practice, state.session); go("quiz");
+    state.session = beginSession(newSession("practice", qs)); store.set(KEYS.practice, state.session); go("quiz");
   },
   "train-domain": el => startPractice([Number(el.dataset.domain)]),
   "resume": el => { state.session = loadSession(el.dataset.mode); if (!state.session || state.session.finished) { state.session = null; return renderHome(); } go("quiz"); startTimer(); },
@@ -37,10 +38,10 @@ export const actions = {
   "nav": el => { state.session = null; go(el.dataset.view); },
   "export": exportData,
   "import": () => { const f = document.getElementById("import-file"); if (f) { f.value = ""; f.click(); } },
-  "ask-reset": () => openDialog("Réinitialiser la progression ?", "Statistiques, activité, historique des examens et sessions en cours seront effacés. Ton profil est conservé.", "Réinitialiser", "reset"),
+  "ask-reset": () => openDialog("Réinitialiser la progression ?", "Statistiques, activité, points d'expérience, historique des examens et sessions en cours seront effacés. Ton profil est conservé.", "Réinitialiser", "reset"),
   "reset": () => {
-    ["exam", "practice", "history", "stats", "activity"].forEach(k => store.del(KEYS[k]));
-    state.stats = {}; state.activity = {}; state.session = null;
+    ["exam", "practice", "history", "stats", "activity", "xp"].forEach(k => store.del(KEYS[k]));
+    state.stats = {}; state.activity = {}; state.xp = newXp(); state.session = null;
     closeDialog(); go("profile"); toast("Progression réinitialisée");
   },
   "quit": () => { save(); state.session = null; go("home"); },   // la session reste enregistrée pour être reprise
@@ -59,7 +60,8 @@ export const actions = {
     const id = state.session.ids[state.session.current];
     if (!(state.session.answers[id] || []).length) return;
     state.session.validated[id] = true; (state.session.log = state.session.log || []).push(id);
-    record(id, isCorrect(Q_BY_ID[id], state.session.answers[id])); saveStats();
+    const ok = isCorrect(Q_BY_ID[id], state.session.answers[id]);
+    record(id, ok); awardForAnswer(id, ok); saveStats();
     save(); renderQuiz();
   },
   "ask-finish": () => {

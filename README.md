@@ -10,6 +10,7 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 - **Entraînement libre** : filtre par domaine, correction et explication après chaque réponse, série de bonnes réponses, reprise des questions ratées.
 - **Révision du jour** : les questions dont l'échéance de révision est arrivée (répétition espacée), les plus en retard d'abord, par séries plafonnées à l'objectif quotidien du profil. Proposée sur l'accueil et le tableau de bord ; l'écran de fin résume le planning (ce qui reste aujourd'hui, prochaine échéance) et propose « Encore une série ». Chaque réponse compte dans l'activité du jour.
 - **Série de jours** : nombre de jours d'affilée où l'objectif quotidien du profil est atteint, affichée sur l'accueil (avec l'avancement du jour) et le tableau de bord. Un jour manqué est pardonné comme **jour de repos**, une fois par période de 7 jours : il ne compte pas mais ne casse pas la série. Aucune pénalité bloquante.
+- **Points d'expérience (XP) et niveaux** : chaque bonne réponse rapporte de l'XP, avec des bonus pour une leçon parfaite et une révision terminée. Le niveau et la progression vers le suivant s'affichent sur le tableau de bord et le profil, le détail des XP gagnés dans la correction et le bilan de fin de session. Barème ci-dessous.
 - **Résultats** : score global, performance par domaine, correction détaillée des erreurs.
 - **Tableau de bord** : chiffres clés (examens passés, dernier score et tendance, questions maîtrisées, taux de réussite), courbe des 10 derniers examens avec seuil et objectif, activité des 14 derniers jours, tableau de maîtrise par domaine, questions à retravailler, historique complet.
 - **Profil** : prénom et avatar, date d'examen (compte à rebours), score visé, objectif quotidien, thème (système, clair, sombre), export et import des données en JSON, réinitialisation de la progression.
@@ -17,6 +18,21 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 - Progression et profil enregistrés dans le navigateur (`localStorage`), sans compte ni serveur.
 
 > **Contributeurs et agents Claude** : lis [`ROADMAP.md`](ROADMAP.md) avant de commencer. Il indique ce qui est fait, ce qui reste, dans quel ordre, et les règles de travail.
+
+## Barème des points d'expérience
+
+| Action | XP |
+|---|---|
+| Bonne réponse (en entraînement, en révision ou en examen) | **+10**, une seule fois par question et par jour |
+| Leçon parfaite : session d'entraînement d'au moins 5 questions, toutes justes | **+20** |
+| Révision du jour terminée : toutes les questions de la série validées | **+15** |
+| Examen blanc | l'XP des bonnes réponses, sans bonus |
+
+**Pas de gain en boucle** : une question ne rapporte de l'XP qu'**une fois par jour** (une erreur ne la « consomme » pas : la réussir ensuite rapporte). Les deux bonus exigent en plus qu'**au moins 5 questions de la session aient réellement rapporté de l'XP** : rejouer les mêmes questions le même jour ne donne donc rien, bonus compris. Le lendemain, elles rapportent à nouveau.
+
+**Niveaux** : le niveau *n* commence à `50 × n × (n − 1)` XP : niveau 2 à 100 XP, 3 à 300, 4 à 600, 5 à 1 000, 10 à 4 500. Les valeurs sont dans `XP_RULES` (`js/config.js`) ; l'application affiche le barème dans la carte « Niveau » (« Comment gagner de l'XP ? »).
+
+Les XP existants partent de zéro : la progression d'avant cette fonctionnalité n'est pas convertie. La réinitialisation de la progression remet aussi l'XP à zéro (le profil est conservé).
 
 ## Utilisation
 
@@ -84,7 +100,7 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 2. `npm run check` : syntaxe des modules de `js/` et import Node des modules purs ;
 3. `npm run test:unit` : tests unitaires (`node --test`, runner intégré à Node) des dossiers `tests/`.
 
-Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `js/streak.js`, `js/backup.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, planning de répétition espacée, migration des données, export et import, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (XP, badges…).
+Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `js/streak.js`, `js/xp.js`, `js/backup.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, planning de répétition espacée, migration des données, export et import, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (badges…).
 
 Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique qui touche au DOM doit d'abord être extraite dans un module pur de `js/` pour rester testable.
 
@@ -103,6 +119,7 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `js/storage.js` | Accès à `localStorage` (tolérant à son absence) et migration de version |
 | `js/srs.js` | **Répétition espacée** pure : planning de révision par question (`reviewCard`, `isDue`, migration des anciennes données) |
 | `js/streak.js` | **Série de jours** pure : `dayStreak` (série et jour de repos), `addActivity`, textes d'affichage |
+| `js/xp.js` | **XP et niveaux** purs : `levelFor`, `awardAnswer` (une fois par question et par jour), `sessionBonuses`, `settleSessionXp` |
 | `js/backup.js` | Format et validation de l'export/import JSON (pur) |
 | `js/state.js` | État partagé (`state`), statistiques, activité, profil, thème |
 | `js/session.js` | Cycle de vie d'une session : chargement, sauvegarde, chrono, démarrage, fin |
@@ -117,9 +134,11 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
 | `tests/` | Tests unitaires (`*.test.js`) et aides (`helpers.js`) |
 
-**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs`, `streak` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
+**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs`, `streak`, `xp` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
 
-Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), carte de révision par question (`ace.stats`), activité par jour (`ace.activity`, avec l'objectif du jour), profil (`ace.profile`).
+Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), carte de révision par question (`ace.stats`), activité par jour (`ace.activity`, avec l'objectif du jour), profil (`ace.profile`), points d'expérience (`ace.xp`).
+
+**Points d'expérience** : `ace.xp` = `{ total, day, ids }` (`ids` = questions déjà récompensées le jour `day`, pour l'anti-boucle). Chaque session garde son bilan (`session.xp`) pour l'afficher à la fin ; les sessions sauvegardées avant l'XP n'en ont pas et sont tolérées. L'export et l'import conservent `xp` (y compris les questions du jour, donc réimporter ne permet pas de regagner l'XP du jour).
 
 **Série de jours** : elle n'est pas stockée, elle se déduit de `ace.activity` (`{ "AAAA-MM-JJ": { n, ok, goal } }`, où `goal` est l'objectif quotidien en vigueur ce jour-là, enregistré à chaque réponse), donc elle est exportée et importée avec l'activité. Un jour compte quand `n >= goal` ; changer l'objectif ne réécrit donc pas le passé, et aujourd'hui est jugé sur l'objectif actuel. Les données d'avant cette règle (sans `goal`) comptent dès 1 réponse. Les jours sont des dates locales ; les changements d'heure n'ont pas d'effet. Les règles complètes sont en tête de `js/streak.js`.
 

@@ -8,6 +8,7 @@ import { compute } from "../logic.js";
 import { IC } from "../ui/icons.js";
 import { countUp, confetti } from "../ui/effects.js";
 import { docLinkHTML, currentReviewPlan } from "./shared.js";
+import { levelFor } from "../xp.js";
 
 export function renderResults() {
   const s = state.session, r = compute(s);
@@ -18,6 +19,20 @@ export function renderResults() {
   const flagged = r.items.filter(i => i.flagged);
   const list = state.reviewFilter === "wrong" ? wrong : state.reviewFilter === "flagged" ? flagged : r.items;
   const CIRC = 2 * Math.PI * 52;
+
+  // Points d'expérience gagnés pendant la session (absent des sessions sauvegardées avant l'XP).
+  const xp = s.xp && s.xp.end ? s.xp : null;
+  const levelUp = xp && levelFor(xp.end).level > levelFor(xp.start).level ? levelFor(xp.end).level : 0;
+  const xpHTML = !xp ? "" : `
+    <section class="card" aria-labelledby="h-xp">
+      <div class="row spread"><h2 id="h-xp">Points d'expérience</h2><span class="pill ${xp.total ? "ok" : ""} mini num">+${xp.total} XP</span></div>
+      ${levelUp ? `<div class="note focus"><p class="small"><strong>Niveau supérieur !</strong> Tu passes au niveau <b class="num">${levelUp}</b>.</p></div>` : ""}
+      ${xp.total ? `<ul class="xp-lines small">
+        ${xp.answers ? `<li><span>Bonnes réponses</span><b class="num">+${xp.answers}</b></li>` : ""}
+        ${xp.bonuses.map(b => `<li><span>${esc(b.label)}</span><b class="num">+${b.xp}</b></li>`).join("")}
+      </ul>` : `<p class="small muted">${r.ok > 0 ? "Pas d'XP cette fois : une question ne rapporte de l'XP qu'une fois par jour." : "Pas d'XP : aucune bonne réponse."}</p>`}
+    </section>
+`;
 
   // Révision du jour : résumé du planning (ce qui reste aujourd'hui, prochaine échéance).
   const isReview = s.kind === "review";
@@ -92,6 +107,8 @@ export function renderResults() {
         </div>
       </div>
     </section>
+
+    ${xpHTML}
 
     ${planningHTML}
 

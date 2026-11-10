@@ -4,6 +4,7 @@ import { store, migrateStorage } from "./storage.js";
 import { sanitizeProfile } from "./logic.js";
 import { normalizeStats, needsMigration, reviewCard } from "./srs.js";
 import { addActivity } from "./streak.js";
+import { normalizeXp, awardAnswer } from "./xp.js";
 import { dayKey } from "./utils.js";
 
 migrateStorage();
@@ -23,14 +24,23 @@ export const state = {
   // Activité par jour : { "AAAA-MM-JJ": { n: réponses validées, ok: bonnes réponses, goal: objectif quotidien du jour } }
   // (la série de jours en est déduite, voir streak.js)
   activity: store.get(KEYS.activity) || {},
-  profile: sanitizeProfile(store.get(KEYS.profile))
+  profile: sanitizeProfile(store.get(KEYS.profile)),
+  // Points d'expérience : { total, day, ids } (ids = questions déjà récompensées le jour `day`), voir xp.js
+  xp: normalizeXp(store.get(KEYS.xp), dayKey())
 };
 
 export function record(id, ok) {
   state.stats[id] = reviewCard(state.stats[id], ok, dayKey());
   const k = dayKey(); state.activity[k] = addActivity(state.activity[k], ok, state.profile.daily);
 }
-export const saveStats = () => { store.set(KEYS.stats, state.stats); store.set(KEYS.activity, state.activity); };
+// XP d'une réponse validée : met à jour l'état et renvoie l'XP gagné (0 si fausse ou déjà récompensée aujourd'hui).
+export function awardXp(id, ok) {
+  const r = awardAnswer(state.xp, id, ok, dayKey());
+  state.xp = r.xp;
+  return r.gained;
+}
+// Enregistre la progression : statistiques, activité et points d'expérience.
+export const saveStats = () => { store.set(KEYS.stats, state.stats); store.set(KEYS.activity, state.activity); store.set(KEYS.xp, state.xp); };
 export const saveProfile = () => store.set(KEYS.profile, state.profile);
 export function applyTheme() {
   if (state.profile.theme === "auto") document.documentElement.removeAttribute("data-theme");

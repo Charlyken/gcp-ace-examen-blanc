@@ -11,7 +11,7 @@ export const store = {
 export function migrateStorage() {
   try {
     if (store.get(KEYS.version) !== STORAGE_VERSION) {
-      ["exam", "practice", "history", "stats", "activity"].forEach(k => store.del(KEYS[k]));
+      ["exam", "practice", "history", "stats", "activity", "xp"].forEach(k => store.del(KEYS[k]));
       store.set(KEYS.version, STORAGE_VERSION);
     }
   } catch (e) { /* stockage indisponible : on continue en mémoire */ }
