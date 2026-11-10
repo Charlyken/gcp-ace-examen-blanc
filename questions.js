@@ -3,6 +3,9 @@ Format d'une question :
   {
     id: "d3-17",              // identifiant UNIQUE (ne jamais réutiliser un id)
     domain: 3,                // 1 à 5, voir DOMAINS ci-dessous
+    topic: "gke",             // sujet : une clé de TOPICS ci-dessous
+    difficulty: 2,            // 1 = facile, 2 = moyen, 3 = difficile (voir l'échelle ci-dessous)
+    doc: "https://docs.cloud.google.com/…",  // page de documentation officielle qui justifie la réponse
     q: "Énoncé…",             // texte ; `entre backticks` = affiché en code
     options: ["…", "…"],      // 4 ou 5 options (elles sont mélangées à l'affichage)
     correct: [0],             // index (base 0) de la ou des bonnes réponses
@@ -10,6 +13,12 @@ Format d'une question :
                               //   2+ index -> réponses multiples (cases à cocher)
     explain: "…"              // explication : pourquoi c'est juste, pourquoi le reste est faux
   }
+Échelle de difficulté :
+  1  facile     savoir direct : un service, une commande ou un outil ; les options sont nettement distinctes
+  2  moyen      scénario avec une contrainte principale ; choix entre services proches ou réglage précis
+  3  difficile  plusieurs contraintes, piège ou subtilité de configuration (ex. valeurs de plage, ordre, héritage)
+Une question à réponses multiples est au moins de difficulté 2.
+`doc` : lien vers la page de référence (docs.cloud.google.com ou kubernetes.io). Vérifie-le avec `npm run check-links`.
 Ne référencez pas les options par leur lettre dans `explain` : l'ordre change.
 */
 export const DOMAINS = {
@@ -21,6 +30,33 @@ export const DOMAINS = {
   5: { name: "Configurer l'accès et la sécurité",            short: "Accès et sécurité", weight: 20 }
 };
 
+// Sujets (champ `topic` des questions) : une clé stable et un libellé affichable.
+// Un sujet peut couvrir plusieurs domaines. Pour en ajouter un, déclare-le ici (le validateur refuse les sujets inconnus).
+export const TOPICS = {
+  "resource-hierarchy": "Hiérarchie des ressources",
+  "billing":            "Facturation et budgets",
+  "gcloud":             "gcloud et SDK",
+  "apis-quotas":        "API et quotas",
+  "org-policy":         "Règles d'organisation",
+  "identity":           "Identités et annuaire",
+  "iam":                "IAM : rôles et autorisations",
+  "service-accounts":   "Comptes de service",
+  "secrets":            "Secrets",
+  "compute":            "Compute Engine",
+  "disks":              "Disques et instantanés",
+  "gke":                "Google Kubernetes Engine",
+  "serverless":         "Cloud Run et App Engine",
+  "storage":            "Cloud Storage",
+  "databases":          "Bases de données",
+  "bigquery":           "BigQuery",
+  "networking":         "Réseau VPC et pare-feu",
+  "load-balancing":     "Équilibrage de charge",
+  "messaging":          "Pub/Sub",
+  "iac":                "Déploiement et infrastructure en tant que code",
+  "logging":            "Journalisation et audit",
+  "monitoring":         "Supervision et alertes"
+};
+
 export const QUESTIONS = [
 
   /* ------------------------------------------------------------------
@@ -28,6 +64,8 @@ export const QUESTIONS = [
      ------------------------------------------------------------------ */
   {
     id: "d1-01", domain: 1,
+    topic: "resource-hierarchy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/resource-manager/docs/cloud-platform-resource-hierarchy",
     q: "Votre entreprise compte trois équipes (Data, Web, Mobile), chacune avec des projets de développement et de production. La sécurité veut appliquer une même règle d'organisation à tous les projets de production, quelle que soit l'équipe, sans la reconfigurer projet par projet. Quelle structure adoptez-vous ?",
     options: [
       "Créer un dossier « Production » contenant les projets de production et appliquer la règle sur ce dossier",
@@ -40,6 +78,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-02", domain: 1,
+    topic: "billing", difficulty: 2,
+    doc: "https://docs.cloud.google.com/billing/docs/how-to/billing-access",
     q: "Une développeuse a le rôle Créateur de projets. Elle crée un projet mais ne parvient pas à y activer la facturation. Quel rôle, respectant le moindre privilège, faut-il lui accorder sur le compte de facturation ?",
     options: [
       "Utilisateur de compte de facturation (Billing Account User)",
@@ -52,6 +92,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-03", domain: 1,
+    topic: "billing", difficulty: 3,
+    doc: "https://docs.cloud.google.com/billing/docs/how-to/budgets-programmatic-notifications",
     q: "Un projet de test a généré une facture inattendue. La direction veut être prévenue quand la dépense atteint 50 %, 90 % et 100 % de 2 000 € par mois, et couper automatiquement la facturation du projet à 100 %. Que mettez-vous en place ?",
     options: [
       "Un budget avec seuils d'alerte, relié à un sujet Pub/Sub qui déclenche une fonction désactivant la facturation du projet",
@@ -64,6 +106,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-04", domain: 1,
+    topic: "billing", difficulty: 2,
+    doc: "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery",
     q: "L'équipe finance veut analyser en SQL le détail des coûts par service, projet et label sur plusieurs mois, puis construire des tableaux de bord. Que configurez-vous ?",
     options: [
       "L'exportation de la facturation Cloud Billing vers un ensemble de données BigQuery",
@@ -76,6 +120,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-05", domain: 1,
+    topic: "gcloud", difficulty: 1,
+    doc: "https://docs.cloud.google.com/sdk/docs/configurations",
     q: "Vous travaillez en ligne de commande sur deux projets, chacun avec un compte, une région et une zone par défaut différents. Vous voulez passer de l'un à l'autre sans retaper ces paramètres. Quelle est la méthode prévue par gcloud ?",
     options: [
       "Créer deux configurations avec `gcloud config configurations create` et basculer avec `gcloud config configurations activate`",
@@ -88,6 +134,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-06", domain: 1,
+    topic: "apis-quotas", difficulty: 1,
+    doc: "https://docs.cloud.google.com/service-usage/docs/enable-disable",
     q: "Dans un projet tout neuf, la création d'une VM par script échoue avec une erreur indiquant que l'API Compute Engine n'a pas été utilisée ou est désactivée. Quelle commande règle le problème ?",
     options: [
       "`gcloud services enable compute.googleapis.com`",
@@ -100,6 +148,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-07", domain: 1,
+    topic: "org-policy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/organization-policy/restrict-locations",
     q: "Pour des raisons réglementaires, aucune ressource de votre organisation ne doit être créée hors de l'Union européenne. Comment l'imposez-vous de façon préventive à tous les projets, actuels et futurs ?",
     options: [
       "Définir la règle d'organisation de restriction des emplacements de ressources (`gcp.resourceLocations`) au niveau de l'organisation",
@@ -112,6 +162,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-08", domain: 1,
+    topic: "apis-quotas", difficulty: 2,
+    doc: "https://docs.cloud.google.com/docs/quotas/view-manage",
     q: "Votre groupe d'instances géré ne dépasse pas 24 VM dans `europe-west1` alors que l'autoscaler en demande 40. Les journaux affichent une erreur `QUOTA_EXCEEDED` sur les CPU. Que faites-vous ?",
     options: [
       "Demander une augmentation du quota de CPU pour cette région depuis la page Quotas",
@@ -124,6 +176,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-09", domain: 1,
+    topic: "identity", difficulty: 2,
+    doc: "https://docs.cloud.google.com/architecture/identity/federating-gcp-with-active-directory-synchronizing-user-accounts",
     q: "Votre entreprise gère 800 employés dans Active Directory et veut qu'ils se connectent à Google Cloud avec leurs identités d'entreprise, les comptes étant créés et supprimés automatiquement. Quelle approche est recommandée ?",
     options: [
       "Synchroniser utilisateurs et groupes vers Cloud Identity avec Google Cloud Directory Sync, et configurer l'authentification unique (SSO)",
@@ -136,6 +190,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-10", domain: 1,
+    topic: "resource-hierarchy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/resource-manager/docs/creating-managing-projects",
     q: "Quelles affirmations sur les identifiants d'un projet Google Cloud sont exactes ?",
     options: [
       "L'ID de projet est unique au niveau mondial et ne peut plus être modifié après la création",
@@ -149,6 +205,8 @@ export const QUESTIONS = [
   },
   {
     id: "d1-11", domain: 1,
+    topic: "iam", difficulty: 3,
+    doc: "https://docs.cloud.google.com/iam/docs/resource-hierarchy-access-control",
     q: "Quelles affirmations décrivent correctement l'héritage des stratégies d'autorisation IAM dans la hiérarchie des ressources ?",
     options: [
       "Un rôle accordé sur un dossier s'applique à tous les projets et ressources qu'il contient",
@@ -166,6 +224,8 @@ export const QUESTIONS = [
      ------------------------------------------------------------------ */
   {
     id: "d2-01", domain: 2,
+    topic: "billing", difficulty: 1,
+    doc: "https://cloud.google.com/products/calculator",
     q: "Avant de lancer un projet, votre responsable demande une estimation du coût mensuel de 6 VM `e2-standard-4`, 2 To de disques persistants et un équilibreur de charge. Quel outil utilisez-vous ?",
     options: [
       "Le simulateur de coût Google Cloud (Pricing Calculator)",
@@ -178,6 +238,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-02", domain: 2,
+    topic: "serverless", difficulty: 1,
+    doc: "https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run",
     q: "Une équipe a conteneurisé une API HTTP sans état. Le trafic est très irrégulier, avec de longues périodes sans aucune requête. Elle veut ne rien payer à l'arrêt et ne gérer aucun serveur ni cluster. Quel service choisissez-vous ?",
     options: [
       "Cloud Run",
@@ -190,6 +252,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-03", domain: 2,
+    topic: "compute", difficulty: 1,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/spot",
     q: "Un traitement par lots de rendu d'images tourne chaque nuit pendant trois heures. Il sauvegarde son état régulièrement et peut reprendre après une interruption. L'objectif principal est de réduire les coûts. Quelle option de calcul choisissez-vous ?",
     options: [
       "Des VM Spot",
@@ -202,6 +266,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-04", domain: 2,
+    topic: "storage", difficulty: 1,
+    doc: "https://docs.cloud.google.com/storage/docs/storage-classes",
     q: "Un cabinet d'audit doit conserver 7 ans des sauvegardes qui ne seront consultées qu'en cas de contrôle, probablement moins d'une fois par an. Quelle classe Cloud Storage minimise le coût de stockage ?",
     options: ["Archive", "Coldline", "Nearline", "Standard"],
     correct: [0],
@@ -209,6 +275,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-05", domain: 2,
+    topic: "databases", difficulty: 1,
+    doc: "https://docs.cloud.google.com/spanner/docs/instances",
     q: "Une plateforme de paiement présente sur trois continents a besoin d'une base relationnelle avec transactions fortement cohérentes, un scaling horizontal des écritures et une disponibilité multirégionale. Quel service convient ?",
     options: ["Spanner", "Cloud SQL", "Bigtable", "Firestore", "BigQuery"],
     correct: [0],
@@ -216,6 +284,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-06", domain: 2,
+    topic: "databases", difficulty: 2,
+    doc: "https://docs.cloud.google.com/bigtable/docs/overview",
     q: "Des capteurs industriels envoient plusieurs dizaines de milliers de mesures horodatées par seconde. L'application doit lire ces séries temporelles avec une latence de quelques millisecondes, sur plusieurs téraoctets. Quelle base choisissez-vous ?",
     options: ["Bigtable", "Cloud SQL pour PostgreSQL", "Firestore", "Cloud Storage", "Memorystore"],
     correct: [0],
@@ -223,6 +293,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-07", domain: 2,
+    topic: "databases", difficulty: 3,
+    doc: "https://docs.cloud.google.com/sql/docs/mysql/high-availability",
     q: "Une instance Cloud SQL pour MySQL en production doit survivre à la panne d'une zone. Par ailleurs, les requêtes de reporting ralentissent l'instance principale. Quelles actions répondent à ces deux besoins ?",
     options: [
       "Activer la configuration haute disponibilité (instance régionale avec instance de secours dans une autre zone)",
@@ -236,6 +308,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-08", domain: 2,
+    topic: "load-balancing", difficulty: 2,
+    doc: "https://docs.cloud.google.com/load-balancing/docs/https",
     q: "Un site e-commerce sert des clients en Europe, en Asie et en Amérique depuis des backends dans trois régions. Vous voulez une seule adresse IP publique, la terminaison HTTPS et le routage de chaque client vers la région saine la plus proche. Quel équilibreur de charge choisissez-vous ?",
     options: [
       "Un équilibreur de charge d'application externe global",
@@ -248,6 +322,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-09", domain: 2,
+    topic: "load-balancing", difficulty: 3,
+    doc: "https://docs.cloud.google.com/load-balancing/docs/internal",
     q: "Dans un même VPC et une même région, un niveau applicatif doit joindre un groupe de serveurs TCP (port 5432, protocole non HTTP) via une adresse IP privée unique. Quel équilibreur de charge convient ?",
     options: [
       "Un équilibreur de charge réseau passthrough interne",
@@ -260,6 +336,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-10", domain: 2,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/committed-use-discounts-overview",
     q: "Un ERP tourne 24 h/24 sur 20 VM dont la taille ne changera pas pendant au moins trois ans. Comment réduire le plus la facture Compute Engine sans modifier l'architecture ?",
     options: [
       "Souscrire une remise sur engagement d'utilisation (CUD) de 3 ans",
@@ -272,6 +350,8 @@ export const QUESTIONS = [
   },
   {
     id: "d2-11", domain: 2,
+    topic: "gke", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview",
     q: "Votre équipe hésite entre GKE Autopilot et GKE Standard. Quelles affirmations sur le mode Autopilot sont exactes ?",
     options: [
       "Google gère les nœuds : provisionnement, mises à niveau et scaling",
@@ -289,6 +369,8 @@ export const QUESTIONS = [
      ------------------------------------------------------------------ */
   {
     id: "d3-01", domain: 3,
+    topic: "compute", difficulty: 1,
+    doc: "https://docs.cloud.google.com/compute/docs/instance-groups",
     q: "Vous devez déployer un parc de serveurs web identiques qui s'adapte à la charge et recrée automatiquement toute VM défaillante. Quelle suite d'actions est correcte ?",
     options: [
       "Créer un modèle d'instance, puis un groupe d'instances géré basé sur ce modèle, avec autoscaling et vérification d'état pour l'autoréparation",
@@ -301,6 +383,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-02", domain: 3,
+    topic: "compute", difficulty: 1,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/startup-scripts/linux",
     q: "Chaque VM Linux d'un modèle d'instance doit installer et lancer Nginx automatiquement à son démarrage, sans image personnalisée. Comment faites-vous ?",
     options: [
       "Fournir un script dans la clé de métadonnées `startup-script` du modèle d'instance",
@@ -313,6 +397,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-03", domain: 3,
+    topic: "gke", difficulty: 1,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl",
     q: "Vous venez de créer un cluster GKE nommé `prod` depuis la console. Sur votre poste, `kubectl get nodes` cible encore un ancien cluster. Quelle commande configure `kubectl` pour le nouveau cluster ?",
     options: [
       "`gcloud container clusters get-credentials prod --region europe-west1`",
@@ -325,6 +411,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-04", domain: 3,
+    topic: "gke", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/service-load-balancer",
     q: "Un Deployment de 3 pods tourne sur GKE et écoute sur le port 8080. Vous voulez l'exposer sur Internet en TCP avec une adresse IP externe stable. Quel objet Kubernetes créez-vous ?",
     options: [
       "Un Service de type `LoadBalancer`",
@@ -337,6 +425,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-05", domain: 3,
+    topic: "serverless", difficulty: 2,
+    doc: "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
     q: "Vous voulez déployer une nouvelle révision d'un service Cloud Run, la tester en privé, puis lui envoyer seulement 10 % du trafic. Quelle démarche suivez-vous ?",
     options: [
       "Déployer avec `--no-traffic`, puis répartir avec `gcloud run services update-traffic --to-revisions`",
@@ -349,6 +439,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-06", domain: 3,
+    topic: "serverless", difficulty: 2,
+    doc: "https://docs.cloud.google.com/sdk/gcloud/reference/app/deploy",
     q: "Vous déployez une nouvelle version d'une application App Engine et voulez la valider sur son URL de version avant qu'elle reçoive le moindre trafic de production. Quelle commande utilisez-vous ?",
     options: [
       "`gcloud app deploy --no-promote`",
@@ -361,6 +453,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-07", domain: 3,
+    topic: "serverless", difficulty: 2,
+    doc: "https://docs.cloud.google.com/run/docs/triggering/storage-triggers",
     q: "Chaque image déposée dans un bucket Cloud Storage doit déclencher automatiquement la génération d'une miniature, sans serveur à gérer. Quelle solution est la plus simple ?",
     options: [
       "Une fonction Cloud Run functions déclenchée par l'événement de finalisation d'objet du bucket",
@@ -373,6 +467,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-08", domain: 3,
+    topic: "storage", difficulty: 2,
+    doc: "https://docs.cloud.google.com/storage-transfer/docs/overview",
     q: "Votre entreprise veut copier 40 To depuis un bucket Amazon S3 vers Cloud Storage, puis synchroniser les nouveaux fichiers chaque nuit. Quel outil est le plus adapté ?",
     options: [
       "Le service de transfert de stockage (Storage Transfer Service)",
@@ -385,6 +481,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-09", domain: 3,
+    topic: "bigquery", difficulty: 2,
+    doc: "https://docs.cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv",
     q: "Des fichiers CSV sont déposés chaque jour dans un bucket Cloud Storage. Vous devez les charger dans une table BigQuery existante depuis un script shell. Quelle commande utilisez-vous ?",
     options: [
       "`bq load --source_format=CSV mon_dataset.ma_table gs://mon-bucket/fichier.csv`",
@@ -397,6 +495,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-10", domain: 3,
+    topic: "networking", difficulty: 3,
+    doc: "https://docs.cloud.google.com/vpc/docs/vpc",
     q: "Vous concevez un réseau VPC en mode personnalisé pour une application déployée dans deux régions. Quelles affirmations sont exactes ?",
     options: [
       "Un réseau VPC est une ressource globale, alors que chaque sous-réseau est régional",
@@ -410,6 +510,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-11", domain: 3,
+    topic: "networking", difficulty: 3,
+    doc: "https://docs.cloud.google.com/load-balancing/docs/health-check-concepts",
     q: "Derrière un équilibreur de charge d'application externe, tous vos backends sont signalés comme défaillants alors que l'application répond bien en local sur les VM. Les VM portent le tag réseau `web`. Quelle règle de pare-feu manque probablement ?",
     options: [
       "Une règle d'entrée autorisant les plages `130.211.0.0/22` et `35.191.0.0/16` vers les VM portant le tag `web`, sur le port de vérification d'état",
@@ -422,6 +524,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-12", domain: 3,
+    topic: "iac", difficulty: 1,
+    doc: "https://docs.cloud.google.com/docs/terraform/terraform-overview",
     q: "Votre équipe doit recréer à l'identique un environnement (VPC, sous-réseaux, VM, buckets) dans trois projets, avec revue des changements et historique dans Git. Quelle approche recommandez-vous ?",
     options: [
       "Décrire l'infrastructure de façon déclarative avec Terraform et appliquer la même configuration aux trois projets",
@@ -434,6 +538,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-13", domain: 3,
+    topic: "messaging", difficulty: 1,
+    doc: "https://docs.cloud.google.com/pubsub/docs/overview",
     q: "Un service de commandes doit prévenir trois autres services (facturation, stock, e-mail) à chaque nouvelle commande, sans attendre leur réponse et sans perdre de message si l'un d'eux est momentanément indisponible. Que déployez-vous ?",
     options: [
       "Un sujet Pub/Sub avec un abonnement par service consommateur",
@@ -446,6 +552,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-14", domain: 3,
+    topic: "iac", difficulty: 1,
+    doc: "https://docs.cloud.google.com/marketplace/docs",
     q: "Le marketing demande un site WordPress opérationnel aujourd'hui sur Compute Engine, avec base de données et serveur web préconfigurés. Quelle est la façon la plus rapide de le déployer ?",
     options: [
       "Déployer une solution WordPress depuis Cloud Marketplace",
@@ -458,6 +566,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-15", domain: 3,
+    topic: "storage", difficulty: 2,
+    doc: "https://docs.cloud.google.com/storage/docs/lifecycle",
     q: "Les objets d'un bucket doivent passer en classe Nearline 30 jours après leur création, puis être supprimés au bout de 365 jours. Quelles actions configurez-vous dans les règles de cycle de vie ?",
     options: [
       "Une action `SetStorageClass` vers Nearline avec la condition d'âge 30 jours",
@@ -471,6 +581,8 @@ export const QUESTIONS = [
   },
   {
     id: "d3-16", domain: 3,
+    topic: "gke", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/horizontalpodautoscaler",
     q: "Un Deployment GKE nommé `api` doit passer automatiquement de 2 à 10 pods quand l'utilisation moyenne du CPU dépasse 60 %. Quelle commande met cela en place ?",
     options: [
       "`kubectl autoscale deployment api --min=2 --max=10 --cpu-percent=60`",
@@ -487,6 +599,8 @@ export const QUESTIONS = [
      ------------------------------------------------------------------ */
   {
     id: "d4-01", domain: 4,
+    topic: "disks", difficulty: 1,
+    doc: "https://docs.cloud.google.com/compute/docs/disks/scheduled-snapshots",
     q: "Les disques persistants de vos VM de production doivent être sauvegardés chaque nuit, avec 14 jours de rétention, sans intervention manuelle. Quelle est la solution la plus simple ?",
     options: [
       "Créer une planification d'instantanés et l'associer aux disques",
@@ -499,6 +613,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-02", domain: 4,
+    topic: "compute", difficulty: 3,
+    doc: "https://docs.cloud.google.com/compute/docs/instance-groups/rolling-out-updates-to-managed-instance-groups",
     q: "Un groupe d'instances géré de 10 VM doit adopter un nouveau modèle d'instance sans jamais réduire la capacité disponible. Quelle méthode utilisez-vous ?",
     options: [
       "Une mise à jour progressive (`rolling-action start-update`) avec `max-unavailable` à 0 et `max-surge` supérieur à 0",
@@ -511,6 +627,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-03", domain: 4,
+    topic: "compute", difficulty: 1,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/changing-machine-type-of-stopped-instance",
     q: "Une VM `e2-medium` manque de mémoire. Vous voulez la passer en `e2-standard-4` en conservant son disque et ses données. Quelle procédure suivez-vous ?",
     options: [
       "Arrêter la VM, modifier son type de machine, puis la redémarrer",
@@ -523,6 +641,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-04", domain: 4,
+    topic: "gke", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/node-pools",
     q: "Votre cluster GKE Standard tourne sur des nœuds `e2-standard-4`. Une nouvelle charge de travail exige des nœuds à mémoire élevée, sans perturber les charges existantes. Que faites-vous ?",
     options: [
       "Ajouter au cluster un nouveau pool de nœuds avec le type de machine adapté et y planifier la charge",
@@ -535,6 +655,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-05", domain: 4,
+    topic: "logging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/logging/docs/export/configure_export_v2",
     q: "L'équipe data veut croiser en SQL les journaux applicatifs avec ses propres tables BigQuery, sur plusieurs mois. Comment acheminez-vous les journaux ?",
     options: [
       "Créer un récepteur (sink) Cloud Logging dont la destination est un ensemble de données BigQuery",
@@ -547,6 +669,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-06", domain: 4,
+    topic: "monitoring", difficulty: 1,
+    doc: "https://docs.cloud.google.com/monitoring/alerts",
     q: "L'astreinte doit recevoir un e-mail et une notification quand l'utilisation CPU d'un groupe de VM dépasse 80 % pendant 5 minutes. Que configurez-vous ?",
     options: [
       "Une règle d'alerte Cloud Monitoring avec une condition sur la métrique CPU et des canaux de notification",
@@ -559,6 +683,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-07", domain: 4,
+    topic: "monitoring", difficulty: 1,
+    doc: "https://docs.cloud.google.com/monitoring/agent/ops-agent",
     q: "Dans Cloud Monitoring, vous voyez le CPU et le réseau de vos VM, mais ni l'utilisation mémoire ni les journaux de l'application. Que devez-vous faire ?",
     options: [
       "Installer l'agent Ops sur les VM",
@@ -571,6 +697,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-08", domain: 4,
+    topic: "storage", difficulty: 2,
+    doc: "https://docs.cloud.google.com/storage/docs/object-versioning",
     q: "Des fichiers importants d'un bucket ont été écrasés par erreur. Vous voulez pouvoir restaurer une version précédente à l'avenir, tout en évitant que le coût de stockage grimpe indéfiniment. Quelles actions combinez-vous ?",
     options: [
       "Activer la gestion des versions d'objets sur le bucket",
@@ -584,6 +712,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-09", domain: 4,
+    topic: "databases", difficulty: 3,
+    doc: "https://docs.cloud.google.com/sql/docs/mysql/backup-recovery/pitr",
     q: "Une erreur de manipulation a supprimé des lignes dans une base Cloud SQL pour MySQL à 14 h 32. Vous voulez retrouver l'état de 14 h 30. Qu'est-ce qui devait être activé au préalable ?",
     options: [
       "Les sauvegardes automatiques et la récupération à un moment précis (journalisation binaire)",
@@ -596,6 +726,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-10", domain: 4,
+    topic: "logging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/logging/docs/audit",
     q: "Une VM de production a été supprimée hier. Vous devez savoir qui l'a fait et à quelle heure. Où cherchez-vous ?",
     options: [
       "Dans les journaux d'audit des activités d'administration (Admin Activity) de Cloud Logging",
@@ -608,6 +740,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-11", domain: 4,
+    topic: "gke", difficulty: 1,
+    doc: "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment",
     q: "Après la mise à jour de l'image d'un Deployment GKE nommé `web`, les nouveaux pods plantent au démarrage. Quelle commande rétablit le plus vite la version précédente ?",
     options: [
       "`kubectl rollout undo deployment/web`",
@@ -620,6 +754,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-12", domain: 4,
+    topic: "monitoring", difficulty: 1,
+    doc: "https://docs.cloud.google.com/trace/docs/overview",
     q: "Une requête utilisateur traverse cinq microservices et dure parfois plus de 4 secondes. Vous voulez identifier quel service introduit la latence. Quel outil utilisez-vous ?",
     options: ["Cloud Trace", "Cloud Profiler", "Error Reporting", "Les journaux de flux VPC"],
     correct: [0],
@@ -627,6 +763,8 @@ export const QUESTIONS = [
   },
   {
     id: "d4-13", domain: 4,
+    topic: "disks", difficulty: 3,
+    doc: "https://docs.cloud.google.com/compute/docs/disks/snapshots",
     q: "Quelles affirmations sur les instantanés (snapshots) de disques persistants Compute Engine sont exactes ?",
     options: [
       "Ils sont incrémentiels : seuls les blocs modifiés depuis l'instantané précédent sont stockés",
@@ -644,6 +782,8 @@ export const QUESTIONS = [
      ------------------------------------------------------------------ */
   {
     id: "d5-01", domain: 5,
+    topic: "iam", difficulty: 1,
+    doc: "https://docs.cloud.google.com/iam/docs/roles-permissions",
     q: "Un prestataire doit uniquement lire les objets d'un bucket Cloud Storage précis. Quelle attribution respecte le principe du moindre privilège ?",
     options: [
       "Le rôle Lecteur des objets Storage (`roles/storage.objectViewer`) sur ce bucket",
@@ -656,6 +796,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-02", domain: 5,
+    topic: "service-accounts", difficulty: 2,
+    doc: "https://docs.cloud.google.com/iam/docs/best-practices-service-accounts",
     q: "Une application sur une VM Compute Engine doit écrire dans un seul ensemble de données BigQuery. Quelle configuration est recommandée ?",
     options: [
       "Créer un compte de service dédié, lui accorder le rôle BigQuery nécessaire sur l'ensemble de données, et l'associer à la VM",
@@ -668,6 +810,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-03", domain: 5,
+    topic: "service-accounts", difficulty: 3,
+    doc: "https://docs.cloud.google.com/iam/docs/workload-identity-federation",
     q: "Un pipeline GitHub Actions doit déployer sur Google Cloud. L'équipe sécurité interdit toute clé de compte de service à longue durée de vie. Quelle solution retenez-vous ?",
     options: [
       "La fédération d'identité de charge de travail, qui échange le jeton OIDC de GitHub contre des identifiants Google de courte durée",
@@ -680,6 +824,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-04", domain: 5,
+    topic: "service-accounts", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity",
     q: "Des pods GKE doivent lire un bucket Cloud Storage. Quelle méthode est recommandée pour les authentifier auprès des API Google Cloud ?",
     options: [
       "La fédération d'identité de charge de travail pour GKE, qui relie un compte de service Kubernetes à des autorisations IAM",
@@ -692,6 +838,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-05", domain: 5,
+    topic: "service-accounts", difficulty: 3,
+    doc: "https://docs.cloud.google.com/iam/docs/service-account-impersonation",
     q: "Une ingénieure doit lancer ponctuellement des commandes gcloud en se faisant passer pour le compte de service `deploy-sa` (option `--impersonate-service-account`), sans télécharger de clé. Quel rôle lui accordez-vous sur ce compte de service ?",
     options: [
       "Créateur de jetons du compte de service (`roles/iam.serviceAccountTokenCreator`)",
@@ -704,6 +852,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-06", domain: 5,
+    topic: "iam", difficulty: 1,
+    doc: "https://docs.cloud.google.com/iam/docs/using-iam-securely",
     q: "Douze développeurs ont besoin des mêmes droits sur un projet, et l'équipe change souvent. Comment gérez-vous leurs accès ?",
     options: [
       "Créer un groupe Google, lui accorder les rôles, puis gérer l'appartenance au groupe",
@@ -716,6 +866,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-07", domain: 5,
+    topic: "iam", difficulty: 3,
+    doc: "https://docs.cloud.google.com/iam/docs/creating-custom-roles",
     q: "Aucun rôle prédéfini ne correspond exactement à votre besoin et vous envisagez un rôle personnalisé. Quelles affirmations sont exactes ?",
     options: [
       "Un rôle personnalisé se crée au niveau de l'organisation ou d'un projet, mais pas d'un dossier",
@@ -729,6 +881,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-08", domain: 5,
+    topic: "logging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/logging/docs/audit/configure-data-access",
     q: "Un audit exige de savoir qui a lu des objets dans un bucket contenant des données sensibles. Or ces lectures n'apparaissent pas dans Cloud Logging. Pourquoi, et que faites-vous ?",
     options: [
       "Les journaux d'audit d'accès aux données sont désactivés par défaut : il faut les activer pour Cloud Storage",
@@ -741,6 +895,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-09", domain: 5,
+    topic: "networking", difficulty: 3,
+    doc: "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding",
     q: "Vos VM n'ont pas d'adresse IP externe. Les administrateurs doivent s'y connecter en SSH depuis leur poste, sans bastion ni VPN, avec un contrôle d'accès par IAM. Que mettez-vous en place ?",
     options: [
       "Le transfert TCP d'Identity-Aware Proxy, avec une règle de pare-feu autorisant `35.235.240.0/20` sur le port 22 et le rôle Utilisateur de tunnels sécurisés par IAP",
@@ -753,6 +909,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-10", domain: 5,
+    topic: "storage", difficulty: 2,
+    doc: "https://docs.cloud.google.com/storage/docs/access-control/signed-urls",
     q: "Un client sans compte Google doit pouvoir télécharger pendant 24 heures un rapport stocké dans un bucket privé. Quelle solution choisissez-vous ?",
     options: [
       "Générer une URL signée valable 24 heures pour cet objet",
@@ -765,6 +923,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-11", domain: 5,
+    topic: "iam", difficulty: 2,
+    doc: "https://docs.cloud.google.com/iam/docs/conditions-overview",
     q: "Une consultante a besoin du rôle Lecteur de journaux sur un projet jusqu'au 30 juin seulement. Vous voulez que l'accès s'arrête tout seul à cette date. Comment faites-vous ?",
     options: [
       "Ajouter à la liaison de rôle une condition IAM d'expiration fondée sur la date et l'heure",
@@ -777,6 +937,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-12", domain: 5,
+    topic: "secrets", difficulty: 2,
+    doc: "https://docs.cloud.google.com/run/docs/configuring/services/secrets",
     q: "Un service Cloud Run a besoin du mot de passe d'une base de données. Il ne doit figurer ni dans le code, ni dans l'image, ni en clair dans la configuration. Quelles actions combinez-vous ?",
     options: [
       "Stocker le mot de passe dans Secret Manager",
@@ -790,6 +952,8 @@ export const QUESTIONS = [
   },
   {
     id: "d5-13", domain: 5,
+    topic: "org-policy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/organization-policy/restrict-service-accounts",
     q: "La sécurité veut empêcher la création de clés de comptes de service dans tous les projets de l'organisation, y compris par les propriétaires de projet. Quelle mesure appliquez-vous ?",
     options: [
       "Appliquer la règle d'organisation `iam.disableServiceAccountKeyCreation` au niveau de l'organisation",

@@ -7,6 +7,7 @@ import { esc, fmt, clock, pct } from "../utils.js";
 import { compute } from "../logic.js";
 import { IC } from "../ui/icons.js";
 import { countUp, confetti } from "../ui/effects.js";
+import { docLinkHTML } from "./shared.js";
 
 export function renderResults() {
   const s = state.session, r = compute(s);
@@ -38,7 +39,7 @@ export function renderResults() {
         <span class="tag dtag d${q.domain}" style="align-self:flex-start">Domaine ${q.domain} · ${esc(DOMAINS[q.domain].short)}</span>
         <p>${fmt(q.q)}</p>
         <ul>${opts}</ul>
-        <div class="feedback ${it.status === "ok" ? "ok" : "ko"}"><strong>Explication</strong><p>${fmt(q.explain)}</p></div>
+        <div class="feedback ${it.status === "ok" ? "ok" : "ko"}"><strong>Explication</strong><p>${fmt(q.explain)}</p>${docLinkHTML(q)}</div>
       </div>
     </details>`;
   }).join("");
