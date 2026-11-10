@@ -129,6 +129,9 @@ svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor
 .mode-ic { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
 .mode-ic svg { width: 26px; height: 26px; }
 .mode-ic.green { background: var(--good-soft); color: var(--good); }
+.mode-ic.fire { background: var(--warn-soft); color: var(--warn); }
+.goal-line { display: flex; flex-direction: column; gap: 6px; }
+.goal-line .bar > i.ok { background: var(--good); }
 .review-main { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 .review-text { flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; }
 .review-text h2 { font-size: 1.15rem; }

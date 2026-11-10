@@ -119,8 +119,5 @@ export function dashData(stats, activity, history) {
   const best = history.reduce((m, h) => Math.max(m, h.pct), 0);
   const avg = history.length ? Math.round(history.reduce((s, h) => s + h.pct, 0) / history.length) : 0;
   const today = activity[dayKey()] || { n: 0, ok: 0 };
-  // Jours consécutifs avec au moins une réponse validée (aujourd'hui compris s'il est actif).
-  let streak = 0;
-  for (let i = 0; i < 400; i++) { const d = new Date(); d.setDate(d.getDate() - i); const a = activity[dayKey(d)]; if (a && a.n) streak++; else if (i) break; }
-  return { history, doms, tried: tried.length, mastered: tried.length - errs.length, errs, attempts, actN, actOk, best, avg, today, streak };
+  return { history, doms, tried: tried.length, mastered: tried.length - errs.length, errs, attempts, actN, actOk, best, avg, today };
 }

@@ -7,7 +7,8 @@ import { store } from "../storage.js";
 import { esc, fmt, clock, pct, dayKey } from "../utils.js";
 import { dashData, daysToExam, countdownText, initialsOf } from "../logic.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML, reviewSectionHTML } from "./shared.js";
+import { appbarHTML, reviewSectionHTML, currentStreak } from "./shared.js";
+import { streakSummary } from "../streak.js";
 
 function scoreChart(history) {
   const pts = history.slice(0, 10).reverse();
@@ -40,6 +41,7 @@ export function renderDashboard() {
   const d = dashData(state.stats, state.activity, store.get(KEYS.history) || []);
   const last = d.history[0], prev = d.history[1];
   const trend = last && prev ? last.pct - prev.pct : null;
+  const streak = currentStreak(), streakText = streakSummary(streak);
   const daysLeft = daysToExam(state.profile), countdown = countdownText(state.profile);
   const left = Math.max(0, state.profile.daily - d.today.n);
   const rate = d.actN ? pct(d.actOk, d.actN) : pct(d.mastered, d.tried);
@@ -56,7 +58,7 @@ export function renderDashboard() {
         <h1>${state.profile.name ? `Bonjour ${esc(state.profile.name)}` : "Ta progression"}</h1>
         <div class="facts">
           <span class="fact${daysLeft !== null && daysLeft >= 0 && daysLeft <= 7 ? " warn" : ""}">${IC.cal}${countdown || "Date d'examen non renseignée"}</span>
-          <span class="fact">${IC.fire}<b>${d.streak}</b> jour${d.streak > 1 ? "s" : ""} d'affilée</span>
+          <span class="fact${streak.atRisk ? " warn" : ""}">${IC.fire}<b>${streak.count}</b> jour${streak.count > 1 ? "s" : ""} d'affilée</span>
           <span class="fact">${IC.target}Score visé <b>${state.profile.target} %</b></span>
         </div>
       </div>
@@ -65,6 +67,7 @@ export function renderDashboard() {
         <div class="row spread"><strong class="small">Objectif du jour</strong><span class="small num muted">${d.today.n}/${state.profile.daily} questions</span></div>
         <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${state.profile.daily}" aria-valuenow="${Math.min(d.today.n, state.profile.daily)}" aria-label="Objectif quotidien"><i class="${left ? "" : "ok"}" style="width:${pct(Math.min(d.today.n, state.profile.daily), state.profile.daily)}%"></i></div>
         <p class="small muted">${left ? `Encore ${left} question${left > 1 ? "s" : ""} à valider aujourd'hui.` : "Objectif quotidien atteint, bravo !"}</p>
+        ${streak.count > 0 ? `<p class="small muted">${streakText.rest}</p>` : ""}
       </div>
     </header>
 
