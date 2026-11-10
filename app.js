@@ -68,22 +68,28 @@
 
   /* ---------------- Création de session ---------------- */
   // Tirage de l'examen : réparti par domaine selon DOMAINS[*].weight (méthode du plus fort reste).
-  function drawExam() {
+  // Nombre de questions par domaine, selon les poids (méthode du plus fort reste) ; `lens` = taille de chaque réserve.
+  function examQuota(lens) {
     const size = Math.min(CONFIG.examSize, QUESTIONS.length);
     const ids = Object.keys(DOMAINS).map(Number);
-    const pools = Object.fromEntries(ids.map(d => [d, shuffle(QUESTIONS.filter(q => q.domain === d))]));
     const totalW = ids.reduce((s, d) => s + DOMAINS[d].weight, 0);
     const quota = {}; let used = 0;
     const rests = ids.map(d => {
       const exact = size * DOMAINS[d].weight / totalW;
-      quota[d] = Math.min(Math.floor(exact), pools[d].length); used += quota[d];
+      quota[d] = Math.min(Math.floor(exact), lens[d]); used += quota[d];
       return { d, r: exact - Math.floor(exact) };
     }).sort((a, b) => b.r - a.r);
     let guard = 0;
     while (used < size && guard++ < 500) {
       const { d } = rests[(guard - 1) % rests.length];
-      if (quota[d] < pools[d].length) { quota[d]++; used++; }
+      if (quota[d] < lens[d]) { quota[d]++; used++; }
     }
+    return quota;
+  }
+  function drawExam() {
+    const ids = Object.keys(DOMAINS).map(Number);
+    const pools = Object.fromEntries(ids.map(d => [d, shuffle(QUESTIONS.filter(q => q.domain === d))]));
+    const quota = examQuota(Object.fromEntries(ids.map(d => [d, pools[d].length])));
     return shuffle(ids.flatMap(d => pools[d].slice(0, quota[d])));
   }
 
@@ -187,6 +193,18 @@
     const multi = QUESTIONS.filter(q => q.correct.length > 1).length;
     const examSize = Math.min(CONFIG.examSize, QUESTIONS.length);
     const examLive = exam && !exam.finished, pracLive = prac && !prac.finished;
+    const tried = dkeys.map(d => QUESTIONS.filter(q => q.domain == d && stats[q.id]).length);
+    const hasStats = tried.some(n => n > 0);
+    const quota = examQuota(Object.fromEntries(dkeys.map((d, i) => [d, counts[i]])));
+    // Domaine à travailler en priorité : plus faible taux de réussite parmi ceux déjà abordés.
+    let weak = -1;
+    dkeys.forEach((d, i) => { if (tried[i] && (weak < 0 || mast[i] / counts[i] < mast[weak] / counts[weak])) weak = i; });
+    // Action recommandée affichée dans le bandeau (un seul bouton principal).
+    const hero = examLive ? { a: "resume", m: "exam", t: "Reprendre l'examen" }
+      : pracLive ? { a: "resume", m: "practice", t: "Reprendre l'entraînement" }
+      : !hasStats ? { a: "practice-all", m: "", t: "Commencer l'entraînement" }
+      : errs.length ? { a: "new-errors", m: "", t: `Revoir mes erreurs (${errs.length})` }
+      : { a: "new-exam", m: "", t: "Lancer un examen blanc" };
 
     const examBlock = examLive
       ? `<div class="note"><p class="small"><strong>Examen en cours</strong> : ${Object.keys(exam.answers).filter(k => exam.answers[k].length).length} réponse(s) sur ${exam.ids.length}, <span class="num">${clock(exam.remainingMs)}</span> restantes.</p>
@@ -204,7 +222,7 @@
           <h1>Prépare ton Associate Cloud Engineer</h1>
           <p class="muted">${QUESTIONS.length} questions sur les 5 domaines de l'examen Google Cloud, dont ${multi} à réponses multiples. Ta progression reste enregistrée dans ce navigateur.</p>
           <div class="row">
-            <button class="btn btn-primary" data-action="${examLive ? "resume" : "new-exam"}" data-mode="exam">${examLive ? "Reprendre l'examen" : "Lancer un examen blanc"} ${IC.next}</button>
+            <button class="btn btn-primary" data-action="${hero.a}"${hero.m ? ` data-mode="${hero.m}"` : ""}>${hero.t} ${IC.next}</button>
           </div>
         </div>
         <div class="art" aria-hidden="true"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
@@ -216,7 +234,11 @@
           <h2 id="h-exam">Examen blanc</h2>
           <div class="facts"><span class="fact"><b>${examSize}</b> questions</span><span class="fact"><b>${CONFIG.examMinutes / 60} h</b> chrono</span><span class="fact">seuil <b>${CONFIG.passPct} %</b></span></div>
           <p class="small muted">Interface dépouillée comme le jour J : pas d'indication de domaine, aucune correction avant la fin, écran de vérification avant l'envoi.</p>
-          ${examBlock}
+          <div class="mix" aria-label="Répartition des questions par domaine">
+            <div class="mixbar" aria-hidden="true">${dkeys.map(d => `<i class="d${d}" style="flex:${quota[d]}"></i>`).join("")}</div>
+            <ul class="mixlist">${dkeys.map(d => `<li class="d${d}"><b class="num">${quota[d]}</b> ${esc(DOMAINS[d].short)}</li>`).join("")}</ul>
+          </div>
+          <div class="mode-cta">${examBlock}</div>
         </section>
 
         <section class="card mode" aria-labelledby="h-prac">
@@ -226,17 +248,21 @@
           <div class="chips" id="domain-chips">
             ${dkeys.map((d, i) => `<label class="chip d${d}"><input type="checkbox" id="dom-${d}" value="${d}" checked><span>${esc(DOMAINS[d].short)} <span class="num">${counts[i]}</span></span></label>`).join("")}
           </div>
-          <div class="row"><button class="btn btn-primary" data-action="new-practice" id="btn-practice">Commencer</button>
+          <button class="btn btn-ghost btn-sm" data-action="toggle-domains" id="btn-toggle-domains" type="button">Tout désélectionner</button>
+          <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" id="btn-practice">Commencer</button>
           ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">Reprendre (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
           ${errs.length ? `<button class="btn" data-action="new-errors">Revoir mes erreurs (${errs.length})</button>` : ""}</div>
         </section>
       </div>
 
       <section class="card" aria-labelledby="h-dom">
-        <div class="row spread"><h2 id="h-dom">Ta maîtrise par domaine</h2><span class="small muted">Questions réussies à ta dernière tentative</span></div>
-        <ul class="dlist">
+        <div class="row spread"><h2 id="h-dom">Ta maîtrise par domaine</h2>${hasStats ? `<span class="small muted">Questions réussies à ta dernière tentative</span>` : ""}</div>
+        ${hasStats ? `<div class="note focus"><p class="small"><strong>À travailler en priorité :</strong> ${esc(DOMAINS[dkeys[weak]].name)} <span class="num muted">(${mast[weak]}/${counts[weak]})</span></p>
+          <button class="btn btn-primary btn-sm" data-action="practice-domain" data-d="${dkeys[weak]}">S'entraîner sur ce domaine ${IC.next}</button></div>`
+        : `<div class="note empty"><p class="small"><strong>Pas encore de données.</strong> Fais un premier entraînement : ta progression par domaine s'affichera ici, avec le domaine à travailler en priorité.</p></div>`}
+        <ul class="dlist${hasStats ? "" : " idle"}">
           ${dkeys.map((d, i) => `<li class="drow d${d}"><span class="dnum">${d}</span><span>${esc(DOMAINS[d].name)}</span>
-            <span class="num small muted">${mast[i]}/${counts[i]}</span>
+            <span class="num small muted">${hasStats ? `${mast[i]}/${counts[i]}` : `${counts[i]} questions`}</span>
             <span class="wbar"><i style="width:${pct(mast[i], counts[i])}%"></i></span></li>`).join("")}
         </ul>
       </section>
@@ -260,6 +286,8 @@
     const n = QUESTIONS.filter(q => doms.includes(q.domain)).length;
     btn.textContent = n ? `Commencer (${n} questions)` : "Choisis au moins un domaine";
     btn.disabled = !n;
+    const t = document.getElementById("btn-toggle-domains");
+    if (t) t.textContent = doms.length === Object.keys(DOMAINS).length ? "Tout désélectionner" : "Tout sélectionner";
   }
 
   /* ======================= VUE : QUESTIONS ======================= */
@@ -354,10 +382,10 @@
           <div class="nav-grid" id="nav-grid"></div>
           <div class="legend">
             ${s.mode === "exam"
-              ? `<span><i style="background:var(--accent-soft)"></i>Répondue</span>`
-              : `<span><i style="background:var(--good-soft)"></i>Juste</span><span><i style="background:var(--bad-soft)"></i>Fausse</span>`}
-            <span><i style="background:var(--accent)"></i>En cours</span>
-            <span><i style="background:var(--g-yellow)"></i>À revoir</span>
+              ? `<span><i class="sw-answered"></i>Répondue</span>`
+              : `<span><i class="sw-ok"></i>Juste ✓</span><span><i class="sw-ko"></i>Fausse ✕</span>`}
+            <span><i class="sw-current"></i>En cours</span>
+            <span><i class="sw-flag"></i>À revoir</span>
           </div>
         </details>
       </main>`;
@@ -408,9 +436,9 @@
             `<label class="chip"><input type="radio" name="pf" id="pf-${k}" value="${k}" ${preFilter === k ? "checked" : ""}><span>${l}</span></label>`).join("")}
         </div>
         <div class="legend" aria-hidden="true">
-          <span><i style="background:var(--accent-soft)"></i>Répondue</span>
+          <span><i class="sw-answered"></i>Répondue</span>
           <span><i class="dash"></i>Sans réponse</span>
-          <span><i style="background:var(--g-yellow)"></i>Marquée</span>
+          <span><i class="sw-flag"></i>Marquée</span>
         </div>
         ${list.length ? `<ul class="plist">${list.map(r => `<li><button class="${r.answered ? "answered" : "empty"}${r.flagged ? " flagged" : ""}" data-action="goto" data-i="${r.i}" aria-label="Question ${r.i + 1}, ${r.answered ? "répondue" : "sans réponse"}${r.flagged ? ", marquée" : ""}"><span class="num">${r.i + 1}</span>${r.flagged ? IC.flag : ""}</button></li>`).join("")}</ul>`
           : `<p class="muted">Aucune question dans ce filtre.</p>`}
@@ -613,6 +641,14 @@
     "new-exam": startExam,
     "ask-new-exam": () => openDialog("Abandonner l'examen en cours ?", "Tes réponses actuelles seront effacées et un nouveau tirage de questions commencera.", "Nouvel examen", "new-exam"),
     "new-practice": () => startPractice(selectedDomains()),
+    "practice-all": () => startPractice(Object.keys(DOMAINS).map(Number)),
+    "practice-domain": el => startPractice([Number(el.dataset.d)]),
+    "toggle-domains": () => {
+      const boxes = document.querySelectorAll("#domain-chips input");
+      const all = Array.from(boxes).every(b => b.checked);
+      boxes.forEach(b => { b.checked = !all; });
+      updatePracticeCount();
+    },
     "new-errors": () => {                                    // rejoue les questions ratées à la dernière tentative
       const qs = shuffle(QUESTIONS.filter(q => stats[q.id] && !stats[q.id].ok));
       if (!qs.length) return;
