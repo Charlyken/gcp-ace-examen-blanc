@@ -274,7 +274,7 @@ describe("dashData", () => {
     freezeDate(t, 2026, 11, 10);
     const d = dashData({}, {}, []);
     assert.equal(d.tried, 0); assert.equal(d.mastered, 0); assert.equal(d.errs.length, 0);
-    assert.equal(d.attempts, 0); assert.equal(d.streak, 0); assert.equal(d.best, 0); assert.equal(d.avg, 0);
+    assert.equal(d.attempts, 0); assert.equal(d.best, 0); assert.equal(d.avg, 0);
     assert.deepEqual(d.today, { n: 0, ok: 0 });
     assert.equal(d.doms.length, domainIds.length);
   });
@@ -300,21 +300,6 @@ describe("dashData", () => {
     const d = dashData({}, act, []);
     assert.deepEqual(d.today, { n: 4, ok: 3 });
     assert.equal(d.actN, 10); assert.equal(d.actOk, 5);
-  });
-  test("série de jours : consécutifs, aujourd'hui compris", t => {
-    freezeDate(t, 2026, 11, 10);
-    const act = { "2026-11-10": { n: 1, ok: 1 }, "2026-11-09": { n: 2, ok: 1 }, "2026-11-08": { n: 3, ok: 3 }, "2026-11-06": { n: 5, ok: 5 } };
-    assert.equal(dashData({}, act, []).streak, 3, "le trou du 7 interrompt la série");
-  });
-  test("série de jours : pas encore actif aujourd'hui ne casse pas la série d'hier", t => {
-    freezeDate(t, 2026, 11, 10);
-    const act = { "2026-11-09": { n: 2, ok: 1 }, "2026-11-08": { n: 3, ok: 3 } };
-    assert.equal(dashData({}, act, []).streak, 2);
-  });
-  test("série de jours : aucune activité récente = 0 ; jours à zéro réponse ignorés", t => {
-    freezeDate(t, 2026, 11, 10);
-    assert.equal(dashData({}, { "2026-11-01": { n: 3, ok: 3 } }, []).streak, 0);
-    assert.equal(dashData({}, { "2026-11-09": { n: 0, ok: 0 } }, []).streak, 0);
   });
   test("dayKey de la série suit la date locale", t => {
     freezeDate(t, 2026, 1, 1);

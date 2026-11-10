@@ -4,6 +4,7 @@ import { Q_BY_ID } from "../data.js";
 import { esc, dayKey, whenText } from "../utils.js";
 import { initialsOf } from "../logic.js";
 import { reviewPlan } from "../srs.js";
+import { dayStreak, streakSummary } from "../streak.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
 
@@ -52,6 +53,29 @@ export function reviewSectionHTML() {
       <span class="mode-ic">${IC.cal}</span>
       <div class="review-text"><h2 id="h-rev">${title}</h2><p class="small muted">${text}</p></div>
       ${cta ? `<div class="review-cta">${cta}</div>` : ""}
+    </div>
+  </section>`;
+}
+
+// Série de jours à la date du jour, selon l'objectif quotidien actuel du profil (voir streak.js).
+export const currentStreak = () => dayStreak(state.activity, dayKey(), state.profile.daily);
+
+// Carte « série » de l'accueil : jours d'affilée, avancement de l'objectif du jour, jour de repos.
+export function streakSectionHTML() {
+  const info = currentStreak(), t = streakSummary(info);
+  const p = Math.min(info.todayN, info.todayGoal);
+  return `<section class="card streak" aria-labelledby="h-streak">
+    <div class="review-main">
+      <span class="mode-ic fire">${IC.fire}</span>
+      <div class="review-text">
+        <h2 id="h-streak">${t.title}</h2>
+        <p class="small muted">${t.sub}</p>
+        ${t.rest ? `<p class="small muted">${t.rest}</p>` : ""}
+      </div>
+    </div>
+    <div class="goal-line">
+      <div class="row spread"><strong class="small">Objectif du jour</strong><span class="small num muted">${info.todayN}/${info.todayGoal} questions</span></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${info.todayGoal}" aria-valuenow="${p}" aria-label="Objectif quotidien"><i class="${info.todayDone ? "ok" : ""}" style="width:${Math.round(p / info.todayGoal * 100)}%"></i></div>
     </div>
   </section>`;
 }

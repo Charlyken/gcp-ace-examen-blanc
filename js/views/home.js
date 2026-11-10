@@ -8,7 +8,7 @@ import { esc, clock, pct } from "../utils.js";
 import { examQuota, countdownText } from "../logic.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML, reviewSectionHTML, currentReviewPlan } from "./shared.js";
+import { appbarHTML, reviewSectionHTML, streakSectionHTML, currentReviewPlan } from "./shared.js";
 
 export function renderHome() {
   const exam = loadSession("exam"), prac = loadSession("practice");
@@ -58,7 +58,10 @@ export function renderHome() {
       <div class="art" aria-hidden="true"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
     </header>
 
-    ${reviewSectionHTML()}
+    <div class="modes daily-row">
+      ${streakSectionHTML()}
+      ${reviewSectionHTML()}
+    </div>
 
     <div class="modes">
       <section class="card mode" aria-labelledby="h-exam">

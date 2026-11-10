@@ -4,6 +4,8 @@ import { HISTORY_MAX, DEFAULT_PROFILE } from "../js/config.js";
 import { QUESTIONS } from "../js/data.js";
 import { APP_ID, buildExport, parseImport } from "../js/backup.js";
 import { reviewCard } from "../js/srs.js";
+import { dayStreak } from "../js/streak.js";
+import { addDays } from "../js/utils.js";
 
 const TODAY = "2026-11-10";
 const known = id => QUESTIONS.some(q => q.id === id);
@@ -45,6 +47,40 @@ describe("export puis import : le planning de révision est conservé", () => {
     assert.deepEqual(back.profile, profile);
     assert.deepEqual(back.activity, activity);
     assert.deepEqual(back.history, history);
+  });
+});
+
+describe("export puis import : la série de jours est conservée", () => {
+  // 6 jours d'activité avec un jour de repos hier ; objectif de 10 enregistré chaque jour.
+  const activity = () => {
+    const a = {};
+    for (const i of [0, 2, 3, 4, 5, 6]) a[addDays(TODAY, -i)] = { n: 10 + i, ok: 8, goal: 10 };
+    return a;
+  };
+  test("l'objectif de chaque jour est conservé et la série est identique", () => {
+    const act = activity();
+    const before = dayStreak(act, TODAY, 10);
+    const back = roundTrip({ profile: DEFAULT_PROFILE, stats: {}, activity: act, history: [] });
+    assert.deepEqual(back.activity, act);
+    assert.deepEqual(dayStreak(back.activity, TODAY, 10), before);
+    assert.equal(before.count, 6); assert.equal(before.rests.length, 1);
+  });
+  test("un objectif relevé après l'export ne change pas la série importée", () => {
+    const back = roundTrip({ profile: DEFAULT_PROFILE, stats: {}, activity: activity(), history: [] });
+    assert.equal(dayStreak(back.activity, TODAY, 50).count, 5, "aujourd'hui (objectif 50) n'est pas atteint ; les jours passés restent valides");
+  });
+  test("un ancien export sans objectif reste lisible (une réponse suffit)", () => {
+    const text = JSON.stringify({ app: APP_ID, activity: { [addDays(TODAY, -1)]: { n: 2, ok: 1 }, [addDays(TODAY, -2)]: { n: 5, ok: 5 } } });
+    const { activity: a } = parseImport(text, { isKnownId: known, today: TODAY });
+    assert.deepEqual(a[addDays(TODAY, -1)], { n: 2, ok: 1 });
+    assert.equal(dayStreak(a, TODAY, 10).count, 2);
+  });
+  test("objectif invalide ignoré, objectif trop grand borné", () => {
+    const text = JSON.stringify({ app: APP_ID, activity: { "2026-11-08": { n: 5, ok: 1, goal: "x" }, "2026-11-09": { n: 5, ok: 1, goal: 0 }, "2026-11-07": { n: 5, ok: 1, goal: 99999 } } });
+    const { activity: a } = parseImport(text, { isKnownId: known, today: TODAY });
+    assert.equal("goal" in a["2026-11-08"], false);
+    assert.equal("goal" in a["2026-11-09"], false);
+    assert.equal(a["2026-11-07"].goal, 200);
   });
 });
 

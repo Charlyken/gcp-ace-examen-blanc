@@ -9,6 +9,7 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 - **Examen blanc** : 50 questions tirées au hasard et réparties par domaine, chronomètre de 2 h, aucune correction avant la fin, écran de vérification avant l'envoi.
 - **Entraînement libre** : filtre par domaine, correction et explication après chaque réponse, série de bonnes réponses, reprise des questions ratées.
 - **Révision du jour** : les questions dont l'échéance de révision est arrivée (répétition espacée), les plus en retard d'abord, par séries plafonnées à l'objectif quotidien du profil. Proposée sur l'accueil et le tableau de bord ; l'écran de fin résume le planning (ce qui reste aujourd'hui, prochaine échéance) et propose « Encore une série ». Chaque réponse compte dans l'activité du jour.
+- **Série de jours** : nombre de jours d'affilée où l'objectif quotidien du profil est atteint, affichée sur l'accueil (avec l'avancement du jour) et le tableau de bord. Un jour manqué est pardonné comme **jour de repos**, une fois par période de 7 jours : il ne compte pas mais ne casse pas la série. Aucune pénalité bloquante.
 - **Résultats** : score global, performance par domaine, correction détaillée des erreurs.
 - **Tableau de bord** : chiffres clés (examens passés, dernier score et tendance, questions maîtrisées, taux de réussite), courbe des 10 derniers examens avec seuil et objectif, activité des 14 derniers jours, tableau de maîtrise par domaine, questions à retravailler, historique complet.
 - **Profil** : prénom et avatar, date d'examen (compte à rebours), score visé, objectif quotidien, thème (système, clair, sombre), export et import des données en JSON, réinitialisation de la progression.
@@ -83,7 +84,7 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 2. `npm run check` : syntaxe des modules de `js/` et import Node des modules purs ;
 3. `npm run test:unit` : tests unitaires (`node --test`, runner intégré à Node) des dossiers `tests/`.
 
-Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `js/backup.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, planning de répétition espacée, migration des données, export et import, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (série de jours, XP…).
+Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `js/streak.js`, `js/backup.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, planning de répétition espacée, migration des données, export et import, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (XP, badges…).
 
 Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique qui touche au DOM doit d'abord être extraite dans un module pur de `js/` pour rester testable.
 
@@ -101,6 +102,7 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `js/logic.js` | **Logique métier pure** : tirage de l'examen, correction, calcul des résultats, statistiques du tableau de bord, validation du profil |
 | `js/storage.js` | Accès à `localStorage` (tolérant à son absence) et migration de version |
 | `js/srs.js` | **Répétition espacée** pure : planning de révision par question (`reviewCard`, `isDue`, migration des anciennes données) |
+| `js/streak.js` | **Série de jours** pure : `dayStreak` (série et jour de repos), `addActivity`, textes d'affichage |
 | `js/backup.js` | Format et validation de l'export/import JSON (pur) |
 | `js/state.js` | État partagé (`state`), statistiques, activité, profil, thème |
 | `js/session.js` | Cycle de vie d'une session : chargement, sauvegarde, chrono, démarrage, fin |
@@ -115,9 +117,11 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
 | `tests/` | Tests unitaires (`*.test.js`) et aides (`helpers.js`) |
 
-**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
+**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs`, `streak` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
 
-Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), carte de révision par question (`ace.stats`), activité par jour (`ace.activity`), profil (`ace.profile`).
+Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), carte de révision par question (`ace.stats`), activité par jour (`ace.activity`, avec l'objectif du jour), profil (`ace.profile`).
+
+**Série de jours** : elle n'est pas stockée, elle se déduit de `ace.activity` (`{ "AAAA-MM-JJ": { n, ok, goal } }`, où `goal` est l'objectif quotidien en vigueur ce jour-là, enregistré à chaque réponse), donc elle est exportée et importée avec l'activité. Un jour compte quand `n >= goal` ; changer l'objectif ne réécrit donc pas le passé, et aujourd'hui est jugé sur l'objectif actuel. Les données d'avant cette règle (sans `goal`) comptent dès 1 réponse. Les jours sont des dates locales ; les changements d'heure n'ont pas d'effet. Les règles complètes sont en tête de `js/streak.js`.
 
 **Répétition espacée** : chaque question répondue a une carte `{ n, ok, ease, interval, reps, due, last, hist }` dans `ace.stats` (détail et règles en tête de `js/srs.js`). `n` et `ok` (nombre de réponses, dernier résultat) existaient avant : le tableau de bord et l'accueil les lisent toujours. Le planning suit une variante de SM-2 adaptée à une réponse juste/fausse : erreur = revue le lendemain avec une facilité réduite ; réussites à l'échéance = intervalles 1 jour, 6 jours, puis × facilité (plafonné à 180 jours) ; réussite avant l'échéance = comptée mais sans avancer le planning. Chaque réponse validée (entraînement ou révision du jour) ou question d'un examen terminé met la carte à jour via `record()` (`js/state.js`). La révision du jour est une session d'entraînement marquée `kind: "review"` (`startReview()` dans `js/session.js`) ; la sélection des questions est dans `js/srs.js` (`dueIds`, `pickReview`, `nextReview`, `reviewPlan`). Les anciennes entrées `{ n, ok }` sont migrées au chargement et à l'import (juste = à revoir demain, fausse = à revoir aujourd'hui) et réécrites aussitôt, sans changer `STORAGE_VERSION` (son incrément purgerait la progression). L'export JSON contient le planning, et l'import le restitue.
 

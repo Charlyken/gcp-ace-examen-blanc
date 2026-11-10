@@ -19,7 +19,7 @@ export function parseImport(text, { isKnownId, today }) {
   if (d.activity && typeof d.activity === "object")
     out.activity = Object.fromEntries(Object.entries(d.activity)
       .filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && v && Number.isFinite(v.n))
-      .map(([k, v]) => [k, { n: v.n, ok: Number.isFinite(v.ok) ? v.ok : 0 }]));
+      .map(([k, v]) => [k, { n: v.n, ok: Number.isFinite(v.ok) ? v.ok : 0, ...(Number.isFinite(v.goal) && v.goal >= 1 ? { goal: Math.min(200, Math.floor(v.goal)) } : {}) }]));
   if (Array.isArray(d.history))
     out.history = d.history.filter(h => h && Number.isFinite(h.date) && Number.isFinite(h.pct) && Number.isFinite(h.ok) && Number.isFinite(h.total)).slice(0, HISTORY_MAX);
   if (d.profile && typeof d.profile === "object") out.profile = sanitizeProfile(d.profile);
