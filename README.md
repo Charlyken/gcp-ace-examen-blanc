@@ -1,6 +1,6 @@
 # Examen blanc GCP ACE
 
-Plateforme d'entraînement **non officielle** pour la certification Google Cloud Associate Cloud Engineer. Une seule page HTML/CSS/JS, sans backend ni dépendance à installer.
+Plateforme d'entraînement **non officielle** pour la certification Google Cloud Associate Cloud Engineer. Application statique HTML/CSS/JS, sans backend ni dépendance à installer.
 
 > Outil personnel, sans lien avec Google. Les questions sont originales et ne proviennent pas de l'examen officiel. Le seuil de 70 % est indicatif : Google ne publie pas la note de passage.
 
@@ -18,7 +18,7 @@ Ouvre `index.html` dans un navigateur. Pour une version en ligne, active GitHub 
 
 ## Ajouter des questions
 
-Tout est dans le tableau `QUESTIONS` du premier bloc `<script>` de `index.html` :
+Tout est dans le tableau `QUESTIONS` de `questions.js` :
 
 ```js
 {
@@ -32,6 +32,26 @@ Tout est dans le tableau `QUESTIONS` du premier bloc `<script>` de `index.html` 
 ```
 
 Les poids des domaines sont dans `DOMAINS`, la taille de l'examen, la durée et le seuil dans `CONFIG`.
+
+Après chaque ajout, lance le validateur (Node 18+, aucune installation) :
+
+```bash
+npm test
+```
+
+Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options sans doublon, explication présente, backticks fermés, pas de référence à une option par sa lettre. Il signale aussi en avertissement les domaines trop peu fournis et le biais « la bonne réponse est la plus longue ». La même vérification tourne en CI (`.github/workflows/ci.yml`).
+
+## Structure
+
+| Fichier | Rôle |
+|---|---|
+| `index.html` | Squelette de la page |
+| `styles.css` | Styles |
+| `questions.js` | Domaines (`DOMAINS`) et banque de questions (`QUESTIONS`) |
+| `app.js` | Logique d'examen, rendu, sauvegarde locale |
+| `scripts/validate-questions.js` | Validateur de la banque |
+
+Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `app.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées.
 
 ## Limites connues
 
