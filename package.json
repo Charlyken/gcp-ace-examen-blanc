@@ -1,0 +1,9 @@
+{
+  "name": "gcp-ace-examen-blanc",
+  "private": true,
+  "description": "Examen blanc non officiel GCP Associate Cloud Engineer",
+  "scripts": {
+    "validate": "node scripts/validate-questions.js",
+    "test": "node scripts/validate-questions.js"
+  }
+}
