@@ -43,13 +43,25 @@ Tout est dans le tableau `QUESTIONS` de `questions.js` :
 
 Les poids des domaines sont dans `DOMAINS`, la taille de l'examen, la durée et le seuil dans `CONFIG`.
 
-Après chaque ajout, lance les vérifications (Node 18+, aucune installation) :
+Après chaque ajout, lance les vérifications (Node 20+, aucune installation) :
 
 ```bash
 npm test
 ```
 
 Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options sans doublon, explication présente, backticks fermés, pas de référence à une option par sa lettre. Il signale aussi en avertissement les domaines trop peu fournis et le biais « la bonne réponse est la plus longue ». La même vérification tourne en CI (`.github/workflows/ci.yml`).
+
+## Tests
+
+`npm test` enchaîne trois étapes, sans aucune installation (Node 20+) :
+
+1. `npm run validate` : validation de la banque de questions ;
+2. `npm run check` : syntaxe des modules de `js/` et import Node des modules purs ;
+3. `npm run test:unit` : tests unitaires (`node --test`, runner intégré à Node) des dossiers `tests/`.
+
+Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (série de jours, répétition espacée…).
+
+Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique qui touche au DOM doit d'abord être extraite dans un module pur de `js/` pour rester testable.
 
 ## Structure
 
@@ -73,6 +85,7 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 | `js/ui/` | `icons` (SVG), `dialog` (dialogue et message furtif), `effects` (confettis, ondes, compteur) |
 | `scripts/validate-questions.js` | Validateur de la banque |
 | `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
+| `tests/` | Tests unitaires (`*.test.js`) et aides (`helpers.js`) |
 
 **Règle d'architecture** : `config`, `data`, `utils` et `logic` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
 

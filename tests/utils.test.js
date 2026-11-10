@@ -1,0 +1,87 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { esc, fmt, shuffle, sameSet, clock, pct, isCorrect, clamp, num, dayKey } from "../js/utils.js";
+import { seedRandom } from "./helpers.js";
+
+test("esc échappe les caractères HTML dangereux", () => {
+  assert.equal(esc(`<a href="x">&</a>`), "&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;");
+  assert.equal(esc(42), "42");
+});
+
+test("fmt échappe puis transforme `code` en <code>", () => {
+  assert.equal(fmt("Lance `gcloud init` <vite>"), "Lance <code>gcloud init</code> &lt;vite&gt;");
+  assert.equal(fmt("`a` et `b`"), "<code>a</code> et <code>b</code>");
+  assert.equal(fmt("backtick `ouvert"), "backtick `ouvert");
+});
+
+test("shuffle renvoie une permutation sans modifier l'original", t => {
+  seedRandom(t, 7);
+  const src = [1, 2, 3, 4, 5, 6, 7, 8];
+  const out = shuffle(src);
+  assert.deepEqual(src, [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.notEqual(out, src);
+  assert.deepEqual(out.slice().sort((a, b) => a - b), src);
+});
+
+test("shuffle est reproductible avec un même tirage", t => {
+  seedRandom(t, 3); const a = shuffle([1, 2, 3, 4, 5, 6]);
+  t.mock.restoreAll(); seedRandom(t, 3); const b = shuffle([1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(a, b);
+});
+
+test("shuffle gère les tableaux vides et à un élément", () => {
+  assert.deepEqual(shuffle([]), []);
+  assert.deepEqual(shuffle([9]), [9]);
+});
+
+test("sameSet compare sans tenir compte de l'ordre ni de la copie", () => {
+  assert.equal(sameSet([1, 0], [0, 1]), true);
+  assert.equal(sameSet([0], [0, 1]), false);
+  assert.equal(sameSet([0, 1], [0, 2]), false);
+  assert.equal(sameSet([], []), true);
+  const a = [2, 1]; sameSet(a, [1, 2]); assert.deepEqual(a, [2, 1], "ne doit pas trier l'entrée");
+});
+
+test("isCorrect : réponse unique, multiple, vide ou absente", () => {
+  const single = { correct: [2] }, multi = { correct: [0, 3] };
+  assert.equal(isCorrect(single, [2]), true);
+  assert.equal(isCorrect(single, [1]), false);
+  assert.equal(isCorrect(multi, [3, 0]), true);
+  assert.equal(isCorrect(multi, [0]), false, "réponse incomplète");
+  assert.equal(isCorrect(multi, [0, 3, 1]), false, "réponse en trop");
+  assert.equal(isCorrect(single, []), false);
+  assert.equal(isCorrect(single, undefined), false);
+});
+
+test("clock formate h:mm:ss et borne à zéro", () => {
+  assert.equal(clock(2 * 3600 * 1000), "2:00:00");
+  assert.equal(clock(61 * 1000), "0:01:01");
+  assert.equal(clock(59_001), "0:01:00", "arrondi à la seconde supérieure");
+  assert.equal(clock(0), "0:00:00");
+  assert.equal(clock(-5000), "0:00:00");
+});
+
+test("pct arrondit et évite la division par zéro", () => {
+  assert.equal(pct(1, 3), 33);
+  assert.equal(pct(2, 3), 67);
+  assert.equal(pct(5, 0), 0);
+  assert.equal(pct(0, 10), 0);
+});
+
+test("clamp et num bornent les valeurs", () => {
+  assert.equal(clamp(5, 0, 3), 3);
+  assert.equal(clamp(-1, 0, 3), 0);
+  assert.equal(num("85", 80, 50, 100), 85);
+  assert.equal(num("120", 80, 50, 100), 100);
+  assert.equal(num("12.6", 80, 5, 100), 13, "arrondi à l'entier");
+  assert.equal(num("", 80, 50, 100), 80);
+  assert.equal(num(null, 80, 50, 100), 80);
+  assert.equal(num(undefined, 80, 50, 100), 80);
+  assert.equal(num("abc", 80, 50, 100), 80);
+});
+
+test("dayKey formate la date locale AAAA-MM-JJ", () => {
+  assert.equal(dayKey(new Date(2026, 0, 5, 23, 59)), "2026-01-05");
+  assert.equal(dayKey(new Date(2026, 11, 31, 0, 0)), "2026-12-31");
+  assert.match(dayKey(), /^\d{4}-\d{2}-\d{2}$/);
+});
