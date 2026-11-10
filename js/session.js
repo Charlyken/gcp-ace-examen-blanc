@@ -1,10 +1,11 @@
 /* Cycle de vie d'une session : chargement, sauvegarde, chronomètre, démarrage et fin. */
 import { CONFIG, KEYS, HISTORY_MAX } from "./config.js";
-import { QUESTIONS } from "./data.js";
+import { QUESTIONS, Q_BY_ID } from "./data.js";
 import { state, record, saveStats } from "./state.js";
 import { store } from "./storage.js";
-import { clock, shuffle } from "./utils.js";
+import { clock, shuffle, dayKey } from "./utils.js";
 import { compute, drawExam, newSession, isSessionUsable } from "./logic.js";
+import { pickReview } from "./srs.js";
 import { closeDialog } from "./ui/dialog.js";
 import { go, render } from "./router.js";
 
@@ -65,6 +66,15 @@ export function startPractice(domains) {
   const qs = shuffle(QUESTIONS.filter(q => domains.includes(q.domain)));
   if (!qs.length) return;
   state.session = newSession("practice", qs, domains);
+  store.set(KEYS.practice, state.session);
+  go("quiz");
+}
+// Série de « Révision du jour » : les questions dont l'échéance est arrivée (les plus en retard d'abord),
+// au plus `profile.daily`, présentées dans le désordre. C'est une session d'entraînement marquée `kind: "review"`.
+export function startReview() {
+  const ids = pickReview(state.stats, dayKey(), state.profile.daily, id => !!Q_BY_ID[id]);
+  if (!ids.length) return;
+  state.session = newSession("practice", shuffle(ids).map(id => Q_BY_ID[id]), null, "review");
   store.set(KEYS.practice, state.session);
   go("quiz");
 }

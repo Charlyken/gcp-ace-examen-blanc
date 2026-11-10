@@ -18,3 +18,10 @@ export const isDateKey = k => {
 };
 // Ajoute (ou retire) des jours à une clé de date ; midi évite les décalages d'heure d'été.
 export const addDays = (key, n) => { const [y, m, d] = key.split("-").map(Number); return dayKey(new Date(y, m - 1, d + n, 12)); };
+// Nombre de jours de `a` à `b` (clés de date) : positif si `b` est plus tard.
+export const daysBetween = (a, b) => {
+  const t = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d, 12).getTime(); };
+  return Math.round((t(b) - t(a)) / 86400000);
+};
+// « aujourd'hui », « demain », « dans 3 jours » (n = nombre de jours à partir d'aujourd'hui).
+export const whenText = n => n <= 0 ? "aujourd'hui" : n === 1 ? "demain" : `dans ${n} jours`;

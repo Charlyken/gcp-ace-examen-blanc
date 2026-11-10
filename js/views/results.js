@@ -3,11 +3,11 @@ import { CONFIG } from "../config.js";
 import { DOMAINS } from "../data.js";
 import { app } from "../dom.js";
 import { state } from "../state.js";
-import { esc, fmt, clock, pct } from "../utils.js";
+import { esc, fmt, clock, pct, whenText } from "../utils.js";
 import { compute } from "../logic.js";
 import { IC } from "../ui/icons.js";
 import { countUp, confetti } from "../ui/effects.js";
-import { docLinkHTML } from "./shared.js";
+import { docLinkHTML, currentReviewPlan } from "./shared.js";
 
 export function renderResults() {
   const s = state.session, r = compute(s);
@@ -18,6 +18,26 @@ export function renderResults() {
   const flagged = r.items.filter(i => i.flagged);
   const list = state.reviewFilter === "wrong" ? wrong : state.reviewFilter === "flagged" ? flagged : r.items;
   const CIRC = 2 * Math.PI * 52;
+
+  // Révision du jour : résumé du planning (ce qui reste aujourd'hui, prochaine échéance).
+  const isReview = s.kind === "review";
+  const plan = isReview ? currentReviewPlan() : null;
+  const plural = n => n > 1 ? "s" : "";
+  const planningHTML = !isReview ? "" : `
+    <section class="card" aria-labelledby="h-plan">
+      <h2 id="h-plan">Planning de révision</h2>
+      <div class="facts">
+        <span class="fact"><b>${r.ok}</b> réussie${plural(r.ok)}, à revoir plus tard</span>
+        <span class="fact${r.total - r.ok ? " warn" : ""}"><b>${r.total - r.ok}</b> à revoir demain</span>
+      </div>
+      <p>${plan.due > 0
+        ? `Il reste <strong>${plan.due}</strong> question${plural(plan.due)} à réviser aujourd'hui.`
+        : plan.next
+          ? `Plus rien à réviser aujourd'hui. Prochaine révision <strong>${whenText(plan.next.days)}</strong> : ${plan.next.count} question${plural(plan.next.count)}.`
+          : "Aucune révision planifiée pour l'instant."}</p>
+      <p class="small muted">Une question réussie revient après un délai de plus en plus long ; une question ratée revient dès le lendemain.</p>
+    </section>
+`;
 
   // Domaine le plus faible (parmi ceux qui ont des questions)
   const doms = Object.keys(DOMAINS).filter(d => r.byDomain[d].total);
@@ -48,7 +68,7 @@ export function renderResults() {
   <div class="strip"></div>
   <main class="wrap ${state.celebrate ? "stagger" : ""}">
     <header style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
-      <span class="tag">${s.mode === "exam" ? "Examen blanc" : "Entraînement libre"} · résultats</span>
+      <span class="tag">${s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : "Entraînement libre"} · résultats</span>
       <h1>${s.timeUp ? "Temps écoulé" : passed ? "Bien joué" : "Session terminée"}</h1>
     </header>
 
@@ -73,6 +93,8 @@ export function renderResults() {
       </div>
     </section>
 
+    ${planningHTML}
+
     <section class="card" aria-labelledby="h-bydom">
       <div class="row spread"><h2 id="h-bydom">Performance par domaine</h2><span class="small muted">Trait vertical : seuil de ${CONFIG.passPct} %</span></div>
       ${doms.map(d => { const b = r.byDomain[d], p = pct(b.ok, b.total); return `
@@ -96,8 +118,12 @@ export function renderResults() {
     </section>
 
     <div class="row">
-      <button class="btn btn-primary" data-action="${s.mode === "exam" ? "new-exam" : "home"}">${s.mode === "exam" ? "Nouvel examen blanc" : "Nouvelle session"} ${IC.next}</button>
-      <button class="btn" data-action="home">Retour à l'accueil</button>
+      ${isReview
+        ? (plan.due > 0
+          ? `<button class="btn btn-primary" data-action="new-review">Encore une série (${plan.batch}) ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
+          : `<button class="btn btn-primary" data-action="home">Retour à l'accueil ${IC.next}</button>`)
+        : `<button class="btn btn-primary" data-action="${s.mode === "exam" ? "new-exam" : "home"}">${s.mode === "exam" ? "Nouvel examen blanc" : "Nouvelle session"} ${IC.next}</button>
+      <button class="btn" data-action="home">Retour à l'accueil</button>`}
     </div>
   </main>`;
 

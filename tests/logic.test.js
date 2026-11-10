@@ -99,6 +99,12 @@ describe("newSession et isSessionUsable", () => {
     assert.equal(newSession("practice", QUESTIONS.slice(0, 2)).domains, null);
   });
 
+  test("kind distingue la révision du jour de l'entraînement libre", () => {
+    assert.equal(newSession("practice", QUESTIONS.slice(0, 2), null, "review").kind, "review");
+    assert.equal(newSession("practice", QUESTIONS.slice(0, 2), [1]).kind, null);
+    assert.equal(newSession("exam", QUESTIONS.slice(0, 2)).kind, null);
+  });
+
   test("isSessionUsable accepte une session valide", () => {
     assert.equal(isSessionUsable(newSession("exam", QUESTIONS.slice(0, 3))), true);
   });

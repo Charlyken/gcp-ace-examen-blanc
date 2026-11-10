@@ -8,7 +8,7 @@ import { esc, clock, pct } from "../utils.js";
 import { examQuota, countdownText } from "../logic.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML } from "./shared.js";
+import { appbarHTML, reviewSectionHTML, currentReviewPlan } from "./shared.js";
 
 export function renderHome() {
   const exam = loadSession("exam"), prac = loadSession("practice");
@@ -26,10 +26,12 @@ export function renderHome() {
   // Domaine à travailler en priorité : plus faible taux de réussite parmi ceux déjà abordés.
   let weak = -1;
   dkeys.forEach((d, i) => { if (tried[i] && (weak < 0 || mast[i] / counts[i] < mast[weak] / counts[weak])) weak = i; });
+  const plan = currentReviewPlan();
   // Action recommandée affichée dans le bandeau (un seul bouton principal).
   const hero = examLive ? { a: "resume", m: "exam", t: "Reprendre l'examen" }
-    : pracLive ? { a: "resume", m: "practice", t: "Reprendre l'entraînement" }
+    : pracLive ? { a: "resume", m: "practice", t: prac.kind === "review" ? "Reprendre la révision" : "Reprendre l'entraînement" }
     : !hasStats ? { a: "practice-all", m: "", t: "Commencer l'entraînement" }
+    : plan.due ? { a: "new-review", m: "", t: `Révision du jour (${plan.due})` }
     : errs.length ? { a: "new-errors", m: "", t: `Revoir mes erreurs (${errs.length})` }
     : { a: "new-exam", m: "", t: "Lancer un examen blanc" };
 
@@ -56,6 +58,8 @@ export function renderHome() {
       <div class="art" aria-hidden="true"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
     </header>
 
+    ${reviewSectionHTML()}
+
     <div class="modes">
       <section class="card mode" aria-labelledby="h-exam">
         <span class="mode-ic">${IC.clock}</span>
@@ -78,7 +82,7 @@ export function renderHome() {
         </div>
         <button class="btn btn-ghost btn-sm" data-action="toggle-domains" id="btn-toggle-domains" type="button">Tout désélectionner</button>
         <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" id="btn-practice">Commencer</button>
-        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">Reprendre (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
+        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">${prac.kind === "review" ? "Reprendre la révision" : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
         ${errs.length ? `<button class="btn" data-action="new-errors">Revoir mes erreurs (${errs.length})</button>` : ""}</div>
       </section>
     </div>
