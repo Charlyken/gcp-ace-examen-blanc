@@ -1,9 +1,12 @@
 {
   "name": "gcp-ace-examen-blanc",
   "private": true,
+  "type": "module",
   "description": "Examen blanc non officiel GCP Associate Cloud Engineer",
   "scripts": {
     "validate": "node scripts/validate-questions.js",
-    "test": "node scripts/validate-questions.js"
+    "check": "node scripts/check-modules.js",
+    "test": "node scripts/validate-questions.js && node scripts/check-modules.js",
+    "start": "python3 -m http.server 8080"
   }
 }

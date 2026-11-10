@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 /* Valide la banque de questions (questions.js). Sans dépendance : node scripts/validate-questions.js
    Code de sortie 1 s'il y a au moins une erreur ; les avertissements n'échouent pas. */
-"use strict";
-const path = require("path");
-const { DOMAINS, QUESTIONS } = require(path.join(__dirname, "..", "questions.js"));
+import { DOMAINS, QUESTIONS } from "../questions.js";
 
 const errors = [], warnings = [];
 const err = (id, msg) => errors.push(`[${id}] ${msg}`);

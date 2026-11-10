@@ -12,5 +12,5 @@ jobs:
           node-version: 20
       - name: Valider la banque de questions
         run: npm test
-      - name: Vérifier la syntaxe de app.js
-        run: node --check app.js
+      - name: Vérifier les modules (syntaxe et imports Node)
+        run: npm run check
