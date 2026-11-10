@@ -1,15 +1,15 @@
-/* Export et import des données de l'utilisateur (JSON). */
-import { KEYS, STORAGE_VERSION, HISTORY_MAX } from "./config.js";
+/* Export et import des données de l'utilisateur (JSON). Le format et sa validation sont dans backup.js (pur). */
+import { KEYS, STORAGE_VERSION } from "./config.js";
 import { Q_BY_ID } from "./data.js";
 import { state, saveStats, saveProfile, applyTheme } from "./state.js";
 import { store } from "./storage.js";
-import { sanitizeProfile } from "./logic.js";
+import { buildExport, parseImport } from "./backup.js";
 import { dayKey } from "./utils.js";
 import { toast } from "./ui/dialog.js";
 import { renderProfile } from "./views/profile.js";
 
 export function exportData() {
-  const data = { app: "gcp-ace-examen-blanc", version: STORAGE_VERSION, exportedAt: new Date().toISOString(), profile: state.profile, stats: state.stats, activity: state.activity, history: store.get(KEYS.history) || [] };
+  const data = buildExport({ profile: state.profile, stats: state.stats, activity: state.activity, history: store.get(KEYS.history) || [] }, STORAGE_VERSION);
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   const a = document.createElement("a"); a.href = url; a.download = `gcp-ace-progression-${dayKey()}.json`;
   document.body.appendChild(a); a.click(); a.remove();
@@ -21,15 +21,11 @@ export function importData(file) {
   const rd = new FileReader();
   rd.onload = () => {
     try {
-      const d = JSON.parse(rd.result);
-      if (!d || d.app !== "gcp-ace-examen-blanc") throw new Error("format");
-      if (d.stats && typeof d.stats === "object")
-        state.stats = Object.fromEntries(Object.entries(d.stats).filter(([id, v]) => Q_BY_ID[id] && v && Number.isFinite(v.n)).map(([id, v]) => [id, { n: v.n, ok: !!v.ok }]));
-      if (d.activity && typeof d.activity === "object")
-        state.activity = Object.fromEntries(Object.entries(d.activity).filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && v && Number.isFinite(v.n)).map(([k, v]) => [k, { n: v.n, ok: Number.isFinite(v.ok) ? v.ok : 0 }]));
-      if (Array.isArray(d.history))
-        store.set(KEYS.history, d.history.filter(h => h && Number.isFinite(h.date) && Number.isFinite(h.pct) && Number.isFinite(h.ok) && Number.isFinite(h.total)).slice(0, HISTORY_MAX));
-      if (d.profile && typeof d.profile === "object") state.profile = sanitizeProfile(d.profile);
+      const d = parseImport(rd.result, { isKnownId: id => !!Q_BY_ID[id], today: dayKey() });
+      if (d.stats) state.stats = d.stats;
+      if (d.activity) state.activity = d.activity;
+      if (d.history) store.set(KEYS.history, d.history);
+      if (d.profile) state.profile = d.profile;
       saveStats(); saveProfile(); applyTheme();
       renderProfile(); toast("Données importées");
     } catch (e) { toast("Fichier non reconnu"); }

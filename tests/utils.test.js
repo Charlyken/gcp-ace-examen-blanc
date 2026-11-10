@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { esc, fmt, shuffle, sameSet, clock, pct, isCorrect, clamp, num, dayKey } from "../js/utils.js";
+import { esc, fmt, shuffle, sameSet, clock, pct, isCorrect, clamp, num, dayKey, isDateKey, addDays } from "../js/utils.js";
 import { seedRandom } from "./helpers.js";
 
 test("esc échappe les caractères HTML dangereux", () => {
@@ -84,4 +84,29 @@ test("dayKey formate la date locale AAAA-MM-JJ", () => {
   assert.equal(dayKey(new Date(2026, 0, 5, 23, 59)), "2026-01-05");
   assert.equal(dayKey(new Date(2026, 11, 31, 0, 0)), "2026-12-31");
   assert.match(dayKey(), /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test("isDateKey accepte les vraies dates et refuse le reste", () => {
+  assert.equal(isDateKey("2026-11-10"), true);
+  assert.equal(isDateKey("2028-02-29"), true, "année bissextile");
+  for (const bad of ["2026-02-31", "2027-02-29", "2026-13-01", "2026-00-10", "26-11-10", "2026-1-5", "", null, undefined, 20261110, "2026-11-10T00:00"]) assert.equal(isDateKey(bad), false, String(bad));
+});
+
+test("addDays ajoute ou retire des jours en traversant mois, années et bissextiles", () => {
+  assert.equal(addDays("2026-11-10", 0), "2026-11-10");
+  assert.equal(addDays("2026-11-10", 1), "2026-11-11");
+  assert.equal(addDays("2026-11-30", 1), "2026-12-01");
+  assert.equal(addDays("2026-12-31", 1), "2027-01-01");
+  assert.equal(addDays("2028-02-28", 1), "2028-02-29");
+  assert.equal(addDays("2027-02-28", 1), "2027-03-01");
+  assert.equal(addDays("2026-01-01", -1), "2025-12-31");
+  assert.equal(addDays("2026-11-10", 180), "2027-05-09");
+});
+
+test("addDays traverse un changement d'heure sans sauter ni répéter un jour", () => {
+  let k = "2026-03-20";
+  const seen = [];
+  for (let i = 0; i < 15; i++) { k = addDays(k, 1); seen.push(k); }
+  assert.equal(new Set(seen).size, 15);
+  assert.equal(seen[0], "2026-03-21"); assert.equal(seen[14], "2026-04-04");
 });
