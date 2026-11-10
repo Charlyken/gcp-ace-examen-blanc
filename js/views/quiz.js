@@ -4,7 +4,7 @@ import { DOMAINS, Q_BY_ID } from "../data.js";
 import { app } from "../dom.js";
 import { state } from "../state.js";
 import { esc, fmt, clock, pct, isCorrect } from "../utils.js";
-import { counters, streakInfo } from "../logic.js";
+import { counters, streakInfo, sessionTitle } from "../logic.js";
 import { IC } from "../ui/icons.js";
 import { docLinkHTML } from "./shared.js";
 
@@ -12,7 +12,7 @@ function topbarHTML() {
   const s = state.session;
   return `
     <div class="row spread topline">
-      <strong class="ttl">${s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : "Entraînement"}</strong>
+      <strong class="ttl">${sessionTitle(s)}</strong>
       ${s.mode === "exam" ? `<span class="timer ${s.remainingMs < CONFIG.lowTimeMs ? "low" : ""}" id="timer" aria-label="Temps restant">${IC.clock}<span id="timer-txt">${clock(state.endTime ? state.endTime - Date.now() : s.remainingMs)}</span></span>` : ""}
       <span class="row tools">
         <button class="btn btn-ghost" data-action="quit">Quitter</button>

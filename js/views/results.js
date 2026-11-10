@@ -9,6 +9,7 @@ import { IC } from "../ui/icons.js";
 import { countUp, confetti } from "../ui/effects.js";
 import { docLinkHTML, currentReviewPlan } from "./shared.js";
 import { levelFor } from "../xp.js";
+import { sessionTitle } from "../logic.js";
 
 export function renderResults() {
   const s = state.session, r = compute(s);
@@ -35,7 +36,8 @@ export function renderResults() {
 `;
 
   // Révision du jour : résumé du planning (ce qui reste aujourd'hui, prochaine échéance).
-  const isReview = s.kind === "review";
+  const isReview = s.kind === "review", isLesson = s.kind === "lesson";
+  const isSeries = isReview || isLesson;     // séries courtes : le seuil de 70 % de l'examen n'a pas de sens
   const plan = isReview ? currentReviewPlan() : null;
   const plural = n => n > 1 ? "s" : "";
   const planningHTML = !isReview ? "" : `
@@ -83,8 +85,8 @@ export function renderResults() {
   <div class="strip"></div>
   <main class="wrap ${state.celebrate ? "stagger" : ""}">
     <header style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
-      <span class="tag">${s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : "Entraînement libre"} · résultats</span>
-      <h1>${s.timeUp ? "Temps écoulé" : passed ? "Bien joué" : "Session terminée"}</h1>
+      <span class="tag">${sessionTitle(s, "Entraînement libre")} · résultats</span>
+      <h1>${s.timeUp ? "Temps écoulé" : passed ? "Bien joué" : isReview ? "Révision terminée" : isLesson ? "Leçon terminée" : "Session terminée"}</h1>
     </header>
 
     <section class="card" aria-label="Score global">
@@ -97,7 +99,9 @@ export function renderResults() {
           <span class="big" id="big-pct">${r.pct} %</span>
         </div>
         <div class="score-side">
-          <span class="pill ${passed ? "ok" : "ko"}">${passed ? IC.check + "Au-dessus du seuil" : IC.cross + "Sous le seuil"} de ${CONFIG.passPct} %</span>
+          ${isSeries
+            ? `<span class="pill ${passed ? "ok" : ""}">${passed ? IC.check + "Très bien" : "À consolider"}</span>`
+            : `<span class="pill ${passed ? "ok" : "ko"}">${passed ? IC.check + "Au-dessus du seuil" : IC.cross + "Sous le seuil"} de ${CONFIG.passPct} %</span>`}
           <span style="font:500 1.3rem var(--font-display)"><span class="num">${r.ok} / ${r.total}</span> bonnes réponses</span>
           <div class="facts">
             ${s.mode === "exam" ? `<span class="fact">Temps utilisé <b>${clock(usedMs)}</b></span>` : ""}
@@ -139,7 +143,9 @@ export function renderResults() {
         ? (plan.due > 0
           ? `<button class="btn btn-primary" data-action="new-review">Encore une série (${plan.batch}) ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
           : `<button class="btn btn-primary" data-action="home">Retour à l'accueil ${IC.next}</button>`)
-        : `<button class="btn btn-primary" data-action="${s.mode === "exam" ? "new-exam" : "home"}">${s.mode === "exam" ? "Nouvel examen blanc" : "Nouvelle session"} ${IC.next}</button>
+        : isLesson
+          ? `<button class="btn btn-primary" data-action="new-lesson">Encore une leçon ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
+          : `<button class="btn btn-primary" data-action="${s.mode === "exam" ? "new-exam" : "home"}">${s.mode === "exam" ? "Nouvel examen blanc" : "Nouvelle session"} ${IC.next}</button>
       <button class="btn" data-action="home">Retour à l'accueil</button>`}
     </div>
   </main>`;

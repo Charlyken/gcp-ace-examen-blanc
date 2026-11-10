@@ -6,6 +6,7 @@ import { store } from "./storage.js";
 import { clock, shuffle, dayKey } from "./utils.js";
 import { compute, drawExam, newSession, isSessionUsable } from "./logic.js";
 import { pickReview } from "./srs.js";
+import { pickLesson } from "./lesson.js";
 import { newSessionXp, recordAnswerXp, settleSessionXp } from "./xp.js";
 import { closeDialog } from "./ui/dialog.js";
 import { go, render } from "./router.js";
@@ -86,6 +87,15 @@ export function startPractice(domains) {
   store.set(KEYS.practice, state.session);
   go("quiz");
 }
+// Leçon courte : un mélange de questions à réviser, à consolider et nouvelles (voir lesson.js).
+export function startLesson() {
+  const { ids } = pickLesson({ questions: QUESTIONS, stats: state.stats, today: dayKey() });
+  if (!ids.length) return;
+  state.session = beginSession(newSession("practice", ids.map(id => Q_BY_ID[id]), null, "lesson"));
+  store.set(KEYS.practice, state.session);
+  go("quiz");
+}
+
 // Série de « Révision du jour » : les questions dont l'échéance est arrivée (les plus en retard d'abord),
 // au plus `profile.daily`, présentées dans le désordre. C'est une session d'entraînement marquée `kind: "review"`.
 export function startReview() {
