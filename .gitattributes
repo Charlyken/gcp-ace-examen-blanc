@@ -1,0 +1,3 @@
+# Fins de ligne LF partout : le hash du précache PWA (npm run build:pwa) dépend des octets des fichiers.
+* text=auto eol=lf
+*.png binary
