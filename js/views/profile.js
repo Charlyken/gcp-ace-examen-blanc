@@ -5,7 +5,7 @@ import { state, saveProfile, applyTheme } from "../state.js";
 import { esc } from "../utils.js";
 import { sanitizeProfile, initialsOf } from "../logic.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML, levelSectionHTML } from "./shared.js";
+import { appbarHTML, levelSectionHTML, installCardHTML } from "./shared.js";
 
 export function renderProfile() {
   const p = state.profile;
@@ -49,6 +49,7 @@ export function renderProfile() {
         <p class="small muted">« Système » suit le réglage clair ou sombre de ton appareil.</p>
       </section>
     </form>
+    ${installCardHTML()}
     <section class="card" aria-labelledby="h-data">
       <h2 id="h-data">Tes données</h2>
       <p class="small muted">Statistiques, historique et profil sont stockés uniquement dans ce navigateur. Exporte-les pour les sauvegarder ou les transférer sur un autre appareil.</p>

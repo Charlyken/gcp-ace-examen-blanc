@@ -8,6 +8,7 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 
 - **Examen blanc** : 50 questions tirées au hasard et réparties par domaine, chronomètre de 2 h, aucune correction avant la fin, écran de vérification avant l'envoi.
 - **Entraînement libre** : filtre par domaine, correction et explication après chaque réponse, série de bonnes réponses, reprise des questions ratées.
+- **Application installable et hors ligne (PWA)** : s'installe sur l'écran d'accueil (Android, iPhone et iPad, ordinateur) et fonctionne sans connexion : examens, entraînement, leçons, tableau de bord. Une nouvelle version est annoncée par un bandeau « Mettre à jour » (jamais de rechargement imposé). Voir la section « Application installable » plus bas.
 - **Leçon courte (≈ 5 minutes)** : une session de 10 questions, sans chrono, lancée en un clic depuis l'accueil (bouton principal du bandeau, ou à côté de la révision du jour). Elle mélange 40 % de questions **à réviser** (échéance arrivée), 30 % **à consolider** (dernière réponse fausse) et le reste de questions **nouvelles**, réparties entre les domaines. Les questions déjà répondues aujourd'hui sont écartées : « Encore une leçon » apporte toujours du neuf. Le bilan de fin donne le score, les XP et propose « Encore une leçon ». Pensée pour une seule main sur mobile (boutons d'action en bas de l'écran, cibles d'au moins 44 px).
 - **Révision du jour** : les questions dont l'échéance de révision est arrivée (répétition espacée), les plus en retard d'abord, par séries plafonnées à l'objectif quotidien du profil. Proposée sur l'accueil et le tableau de bord ; l'écran de fin résume le planning (ce qui reste aujourd'hui, prochaine échéance) et propose « Encore une série ». Chaque réponse compte dans l'activité du jour.
 - **Série de jours** : nombre de jours d'affilée où l'objectif quotidien du profil est atteint, affichée sur l'accueil (avec l'avancement du jour) et le tableau de bord. Un jour manqué est pardonné comme **jour de repos**, une fois par période de 7 jours : il ne compte pas mais ne casse pas la série. Aucune pénalité bloquante.
@@ -19,6 +20,27 @@ Plateforme d'entraînement **non officielle** pour la certification Google Cloud
 - Progression et profil enregistrés dans le navigateur (`localStorage`), sans compte ni serveur.
 
 > **Contributeurs et agents Claude** : lis [`ROADMAP.md`](ROADMAP.md) avant de commencer. Il indique ce qui est fait, ce qui reste, dans quel ordre, et les règles de travail.
+
+## Application installable (PWA)
+
+L'application est une PWA : manifeste (`manifest.webmanifest`), icônes (`icons/`) et service worker (`sw.js`). Elle doit être servie en **HTTPS** (GitHub Pages, Vercel…) ou sur `localhost` (`npm start`) : sans connexion sécurisée, ni installation ni mode hors ligne.
+
+**Installer** : la carte « Installer l'application » du profil s'adapte à l'appareil.
+- Chrome et Edge (Android, ordinateur) : bouton « Installer ».
+- iPhone et iPad : depuis **Safari**, bouton Partager puis « Sur l'écran d'accueil » (iOS ne propose pas d'invite automatique ; la carte affiche les étapes).
+- Autres navigateurs : menu du navigateur, « Installer l'application ».
+
+**Hors ligne** : au premier chargement, le service worker télécharge tout le « shell » (page, styles, modules, questions, icônes) dans un cache. Ensuite l'application démarre et fonctionne sans réseau ; la progression est dans le navigateur (`localStorage`). Les polices Google ne sont gardées qu'après une première visite en ligne ; sans elles, la pile de polices retombe sur le système.
+
+**Mises à jour** : le cache porte un numéro de version (empreinte du contenu des fichiers). Quand une nouvelle version est publiée, elle s'installe en arrière-plan puis un bandeau propose « Mettre à jour » ; la page se recharge **seulement** sur clic, et la session en cours (examen compris) est conservée. « Plus tard » ferme le bandeau ; la mise à jour est reproposée au prochain chargement. Une application laissée ouverte revérifie quand elle redevient visible.
+
+> **Règle pour les contributeurs** : après toute modification d'un fichier de l'application (`index.html`, `styles.css`, `questions.js`, `js/**`, `icons/**`, `manifest.webmanifest`, `sw.js`), lance
+> ```bash
+> npm run build:pwa
+> ```
+> et ajoute `precache-manifest.js` au commit. Ce fichier généré contient la version du cache et la liste des fichiers précachés ; `npm test` et la CI échouent s'il est périmé (`npm run check-pwa`). Sans cela, les utilisateurs ne recevraient pas la nouvelle version. En cas de conflit sur ce fichier dans une fusion, régénère-le avec la même commande plutôt que de le fusionner à la main. Si tu ajoutes un module dans `js/`, il est repris automatiquement ; un test vérifie que tout fichier importé est bien précaché.
+
+Les icônes PNG sont générées depuis `icons/icon.svg` et `icons/icon-maskable.svg` par `node scripts/make-icons.js` (Playwright requis, hors CI). Audit Lighthouse (catégorie PWA) : 100 %.
 
 ## Barème des points d'expérience
 
@@ -95,11 +117,12 @@ Il vérifie notamment : ids uniques, index de `correct` valides, 4 ou 5 options 
 
 ## Tests
 
-`npm test` enchaîne trois étapes, sans aucune installation (Node 20+) :
+`npm test` enchaîne les vérifications suivantes, sans aucune installation (Node 20+) :
 
 1. `npm run validate` : validation de la banque de questions ;
 2. `npm run check` : syntaxe des modules de `js/` et import Node des modules purs ;
-3. `npm run test:unit` : tests unitaires (`node --test`, runner intégré à Node) des dossiers `tests/`.
+3. `npm run check-pwa` : le précache de la PWA est à jour (sinon `npm run build:pwa`) ;
+4. `npm run test:unit` : tests unitaires (`node --test`, runner intégré à Node) des dossiers `tests/`.
 
 Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `js/streak.js`, `js/xp.js`, `js/lesson.js`, `js/backup.js`) et le stockage (`js/storage.js`) : tirage de l'examen par domaine, correction et scoring, validation du profil, compte à rebours, statistiques du tableau de bord, planning de répétition espacée, migration des données, export et import, migration de version. `tests/helpers.js` fournit un tirage aléatoire reproductible (`seedRandom`) et une horloge figée (`freezeDate`) ; copie ce modèle pour tester les prochaines fonctions pures (badges…).
 
@@ -109,7 +132,10 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | Squelette de la page, charge `js/main.js` |
+| `index.html` | Squelette de la page, charge `js/main.js` ; balises PWA (manifeste, icônes, thème, iOS) |
+| `manifest.webmanifest`, `icons/` | Manifeste de l'application et icônes (PNG, SVG, maskable, iOS) |
+| `sw.js` | Service worker : précache du shell, hors ligne, mise à jour sur demande |
+| `precache-manifest.js` | **Généré** (`npm run build:pwa`) : version du cache et fichiers précachés |
 | `styles.css` | Styles |
 | `questions.js` | Domaines (`DOMAINS`), sujets (`TOPICS`) et banque de questions (`QUESTIONS`), module ES |
 | `js/main.js` | Point d'entrée : branche les écouteurs et affiche la première vue |
@@ -118,6 +144,7 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `js/utils.js` | Utilitaires purs (échappement, mélange, chrono, pourcentages…) |
 | `js/logic.js` | **Logique métier pure** : tirage de l'examen, correction, calcul des résultats, statistiques du tableau de bord, validation du profil |
 | `js/storage.js` | Accès à `localStorage` (tolérant à son absence) et migration de version |
+| `js/pwa.js`, `js/install.js` | Enregistrement du service worker, bandeau de mise à jour, invite d'installation ; `install.js` (pur) choisit le message d'installation |
 | `js/lesson.js` | **Leçon courte** pure : `pickLesson` (mélange de questions à réviser, à consolider et nouvelles) |
 | `js/srs.js` | **Répétition espacée** pure : planning de révision par question (`reviewCard`, `isDue`, migration des anciennes données) |
 | `js/streak.js` | **Série de jours** pure : `dayStreak` (série et jour de repos), `addActivity`, textes d'affichage |
@@ -132,11 +159,13 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `js/ui/` | `icons` (SVG), `dialog` (dialogue et message furtif), `effects` (confettis, ondes, compteur) |
 | `scripts/validate-questions.js` | Lance le validateur de la banque et affiche le rapport |
 | `scripts/validation.js` | Règles de validation (fonction pure `validateBank`) |
+| `scripts/pwa.js`, `scripts/build-pwa.js` | Liste des fichiers précachés et version du cache ; génération et contrôle de `precache-manifest.js` |
+| `scripts/make-icons.js` | Génère les icônes PNG (Playwright, hors CI) |
 | `scripts/check-links.js` | Vérifie que les liens `doc` répondent (`npm run check-links`, réseau) |
 | `scripts/check-modules.js` | Vérifie la syntaxe des modules et que les modules purs s'importent depuis Node |
 | `tests/` | Tests unitaires (`*.test.js`) et aides (`helpers.js`) |
 
-**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs`, `streak`, `xp`, `lesson` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
+**Règle d'architecture** : `config`, `data`, `utils`, `logic`, `srs`, `streak`, `xp`, `lesson`, `install` et `backup` ne touchent ni au DOM ni à l'état global ; ils restent importables et testables depuis Node. L'état modifiable vit uniquement dans `state` (`js/state.js`) ; les vues le lisent, les actions le modifient.
 
 Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSION` dans `js/config.js`) : incrémente-le si le format d'une session change, les anciennes données seront purgées (le profil est conservé). Clés utilisées : sessions (`ace.session.*`), historique des examens (`ace.history`, 20 maximum), carte de révision par question (`ace.stats`), activité par jour (`ace.activity`, avec l'objectif du jour), profil (`ace.profile`), points d'expérience (`ace.xp`).
 
