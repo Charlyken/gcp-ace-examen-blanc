@@ -5,7 +5,7 @@ import { app } from "../dom.js";
 import { state } from "../state.js";
 import { store } from "../storage.js";
 import { esc, clock, pct } from "../utils.js";
-import { examQuota, countdownText } from "../logic.js";
+import { examQuota, countdownText, resumeLabel } from "../logic.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
 import { appbarHTML, reviewSectionHTML, streakSectionHTML, currentReviewPlan } from "./shared.js";
@@ -28,12 +28,12 @@ export function renderHome() {
   dkeys.forEach((d, i) => { if (tried[i] && (weak < 0 || mast[i] / counts[i] < mast[weak] / counts[weak])) weak = i; });
   const plan = currentReviewPlan();
   // Action recommandée affichée dans le bandeau (un seul bouton principal).
-  const hero = examLive ? { a: "resume", m: "exam", t: "Reprendre l'examen" }
-    : pracLive ? { a: "resume", m: "practice", t: prac.kind === "review" ? "Reprendre la révision" : "Reprendre l'entraînement" }
-    : !hasStats ? { a: "practice-all", m: "", t: "Commencer l'entraînement" }
+  // Reprendre ce qui est en cours, sinon la révision du jour, sinon une leçon courte (un clic, environ 5 minutes).
+  const hero = examLive ? { a: "resume", m: "exam", t: resumeLabel(exam) }
+    : pracLive ? { a: "resume", m: "practice", t: resumeLabel(prac) }
     : plan.due ? { a: "new-review", m: "", t: `Révision du jour (${plan.due})` }
-    : errs.length ? { a: "new-errors", m: "", t: `Revoir mes erreurs (${errs.length})` }
-    : { a: "new-exam", m: "", t: "Lancer un examen blanc" };
+    : { a: "new-lesson", m: "", t: "Leçon courte · 5 min" };
+  const heroLesson = hero.a === "new-review";   // la leçon reste accessible quand la révision du jour est proposée en premier
 
   const examBlock = examLive
     ? `<div class="note"><p class="small"><strong>Examen en cours</strong> : ${Object.keys(exam.answers).filter(k => exam.answers[k].length).length} réponse(s) sur ${exam.ids.length}, <span class="num">${clock(exam.remainingMs)}</span> restantes.</p>
@@ -53,6 +53,7 @@ export function renderHome() {
         <p class="muted">${QUESTIONS.length} questions sur les 5 domaines de l'examen Google Cloud, dont ${multi} à réponses multiples. Ta progression reste enregistrée dans ce navigateur.</p>
         <div class="row">
           <button class="btn btn-primary" data-action="${hero.a}"${hero.m ? ` data-mode="${hero.m}"` : ""}>${hero.t} ${IC.next}</button>
+          ${heroLesson ? `<button class="btn" data-action="new-lesson">Leçon courte · 5 min</button>` : ""}
         </div>
       </div>
       <div class="art" aria-hidden="true"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
@@ -85,7 +86,7 @@ export function renderHome() {
         </div>
         <button class="btn btn-ghost btn-sm" data-action="toggle-domains" id="btn-toggle-domains" type="button">Tout désélectionner</button>
         <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" id="btn-practice">Commencer</button>
-        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">${prac.kind === "review" ? "Reprendre la révision" : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
+        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">${prac.kind ? resumeLabel(prac) : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
         ${errs.length ? `<button class="btn" data-action="new-errors">Revoir mes erreurs (${errs.length})</button>` : ""}</div>
       </section>
     </div>

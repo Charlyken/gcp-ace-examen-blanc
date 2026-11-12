@@ -23,7 +23,7 @@ for (const f of files) {
 }
 
 // Modules qui ne doivent pas toucher au DOM à l'import.
-const PURE = ["config", "data", "utils", "logic", "srs", "streak", "backup", "storage", "state"];
+const PURE = ["config", "data", "utils", "logic", "srs", "streak", "xp", "lesson", "backup", "storage", "state"];
 for (const name of PURE) {
   try { await import(pathToFileURL(join(root, "js", name + ".js")).href); }
   catch (e) { failed++; console.error(`Import impossible depuis Node : js/${name}.js (${e.message})`); }

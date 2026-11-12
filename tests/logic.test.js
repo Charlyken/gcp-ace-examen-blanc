@@ -4,7 +4,7 @@ import { CONFIG, DEFAULT_PROFILE } from "../js/config.js";
 import { DOMAINS, QUESTIONS, Q_BY_ID } from "../js/data.js";
 import {
   examQuota, drawExam, newSession, isSessionUsable, counters, streakInfo, compute,
-  sanitizeProfile, initialsOf, daysToExam, countdownText, dashData
+  sanitizeProfile, initialsOf, daysToExam, countdownText, dashData, sessionTitle, resumeLabel
 } from "../js/logic.js";
 import { dayKey } from "../js/utils.js";
 import { seedRandom, freezeDate } from "./helpers.js";
@@ -125,6 +125,26 @@ describe("newSession et isSessionUsable", () => {
     const unknown = good(); unknown.ids[0] = "question-supprimee"; assert.equal(isSessionUsable(unknown), false);
     const noOrder = good(); delete noOrder.order; assert.equal(isSessionUsable(noOrder), false);
     const badLen = good(); badLen.order[badLen.ids[0]] = [0, 1]; assert.equal(isSessionUsable(badLen), false, "nombre d'options modifié");
+  });
+});
+
+describe("sessionTitle et resumeLabel", () => {
+  const S = (mode, kind) => ({ mode, kind: kind || null });
+  test("intitulé selon l'origine de la session", () => {
+    assert.equal(sessionTitle(S("exam")), "Examen blanc");
+    assert.equal(sessionTitle(S("practice", "review")), "Révision du jour");
+    assert.equal(sessionTitle(S("practice", "lesson")), "Leçon courte");
+    assert.equal(sessionTitle(S("practice")), "Entraînement");
+    assert.equal(sessionTitle(S("practice"), "Entraînement libre"), "Entraînement libre");
+  });
+  test("libellé du bouton de reprise", () => {
+    assert.equal(resumeLabel(S("exam")), "Reprendre l'examen");
+    assert.equal(resumeLabel(S("practice", "review")), "Reprendre la révision");
+    assert.equal(resumeLabel(S("practice", "lesson")), "Reprendre la leçon");
+    assert.equal(resumeLabel(S("practice")), "Reprendre l'entraînement");
+  });
+  test("une session ancienne sans kind est un entraînement libre", () => {
+    assert.equal(sessionTitle({ mode: "practice" }), "Entraînement");
   });
 });
 

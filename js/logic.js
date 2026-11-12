@@ -33,7 +33,7 @@ export function drawExam() {
 }
 
 /* ---------------- Sessions ---------------- */
-// `kind` précise l'origine d'une session d'entraînement : "review" = révision du jour (voir srs.js), null = entraînement libre.
+// `kind` précise l'origine d'une session d'entraînement : "review" = révision du jour (srs.js), "lesson" = leçon courte (lesson.js), null = entraînement libre.
 export function newSession(mode, questions, domains, kind) {
   const order = {};
   questions.forEach(q => { order[q.id] = shuffle(q.options.map((_, i) => i)); });
@@ -45,6 +45,10 @@ export function newSession(mode, questions, domains, kind) {
     xp: newSessionXp()   // XP de la session (voir xp.js) ; `start` = total d'XP au départ, fixé au démarrage
   };
 }
+// Intitulé d'une session selon son origine (`free` = intitulé de l'entraînement libre).
+export const sessionTitle = (s, free = "Entraînement") => s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : s.kind === "lesson" ? "Leçon courte" : free;
+export const resumeLabel = s => s.mode === "exam" ? "Reprendre l'examen" : s.kind === "review" ? "Reprendre la révision" : s.kind === "lesson" ? "Reprendre la leçon" : "Reprendre l'entraînement";
+
 // Une session sauvegardée est inutilisable si des questions ont été retirées de la banque.
 export function isSessionUsable(s) {
   return !!s && Array.isArray(s.ids) && s.ids.length > 0 &&

@@ -11,6 +11,13 @@ export const HISTORY_MAX = 20;    // nombre d'examens blancs conservés dans l'h
 export const STORAGE_VERSION = 1;
 export const LETTERS = "ABCDE";
 
+// Leçon courte (≈ 5 minutes) : taille et composition. Le reste de la leçon est complété par des questions nouvelles.
+export const LESSON = {
+  size: 10,          // nombre de questions
+  due: 0.4,          // part de questions à réviser (échéance atteinte)
+  weak: 0.3          // part de questions à consolider (dernière réponse fausse)
+};
+
 // Points d'expérience (XP). Barème affiché dans l'application et documenté dans le README.
 export const XP_RULES = {
   answer: 10,        // une bonne réponse, la première fois de la journée pour cette question
