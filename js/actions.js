@@ -9,6 +9,7 @@ import { newXp } from "./xp.js";
 import { exportData } from "./data-io.js";
 import { loadSession, save, startTimer, startExam, startPractice, startReview, startLesson, move, finish, beginSession, awardForAnswer } from "./session.js";
 import { go } from "./router.js";
+import { promptInstall } from "./pwa.js";
 import { renderQuiz, refreshChrome } from "./views/quiz.js";
 import { renderHome, selectedDomains, updatePracticeCount } from "./views/home.js";
 import { openDialog, closeDialog, toast } from "./ui/dialog.js";
@@ -38,6 +39,7 @@ export const actions = {
   "home": () => { state.session = null; go("home"); },
   "nav": el => { state.session = null; go(el.dataset.view); },
   "export": exportData,
+  "install": promptInstall,
   "import": () => { const f = document.getElementById("import-file"); if (f) { f.value = ""; f.click(); } },
   "ask-reset": () => openDialog("Réinitialiser la progression ?", "Statistiques, activité, points d'expérience, historique des examens et sessions en cours seront effacés. Ton profil est conservé.", "Réinitialiser", "reset"),
   "reset": () => {

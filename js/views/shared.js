@@ -6,6 +6,8 @@ import { initialsOf } from "../logic.js";
 import { reviewPlan } from "../srs.js";
 import { dayStreak, streakSummary } from "../streak.js";
 import { levelFor, xpRulesText } from "../xp.js";
+import { installText } from "../install.js";
+import { pwaStatus, onPwaChange } from "../pwa.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
 
@@ -99,3 +101,16 @@ export function levelSectionHTML() {
     <details class="xp-rules"><summary class="small">Comment gagner de l'XP ?</summary><ul class="small muted">${xpRulesText().map(t => `<li>${esc(t)}</li>`).join("")}</ul></details>
   </section>`;
 }
+
+// Carte « Installer l'application » (profil) : installation, mode hors ligne, étapes pour iOS.
+export function installCardHTML() {
+  const { mode, ready } = pwaStatus(), t = installText(mode, ready);
+  return `<section class="card" id="install-card" aria-labelledby="h-install">
+    <h2 id="h-install">${esc(t.title)}</h2>
+    <p class="small muted">${esc(t.text)}</p>
+    ${t.steps.length ? `<ol class="small muted install-steps">${t.steps.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
+    ${t.button ? `<div class="row"><button class="btn btn-primary" data-action="install" type="button">${esc(t.button)}</button></div>` : ""}
+  </section>`;
+}
+// Quand l'état PWA change (invite d'installation reçue, hors ligne prêt), on remplace la carte si elle est affichée.
+onPwaChange(() => { const el = document.getElementById("install-card"); if (el) el.outerHTML = installCardHTML(); });

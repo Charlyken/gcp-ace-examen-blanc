@@ -14,5 +14,7 @@ jobs:
         run: npm run validate
       - name: Vérifier les modules (syntaxe et imports Node)
         run: npm run check
+      - name: Vérifier le précache PWA (npm run build:pwa si en échec)
+        run: npm run check-pwa
       - name: Tests unitaires
         run: npm run test:unit
