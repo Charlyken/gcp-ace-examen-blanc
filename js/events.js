@@ -47,7 +47,7 @@ export function initEvents() {
     else if (t.closest && t.closest("#profile-form")) { readProfileForm(); toast("Profil enregistré"); }   // profil : enregistrement automatique
   });
   document.addEventListener("input", e => { if (e.target.id === "p-name") previewAvatar(); });   // aperçu des initiales en direct
-  document.addEventListener("submit", e => { if (e.target.id === "profile-form") e.preventDefault(); });
+  document.addEventListener("submit", e => { if (e.target.id === "profile-form" || e.target.id === "welcome-form") e.preventDefault(); });
 
   // Sauvegarde du temps restant quand l'onglet est quitté ou masqué.
   window.addEventListener("pagehide", save);

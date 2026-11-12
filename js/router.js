@@ -7,6 +7,7 @@ import { renderQuiz, renderReview } from "./views/quiz.js";
 import { renderResults } from "./views/results.js";
 import { renderDashboard } from "./views/dashboard.js";
 import { renderProfile } from "./views/profile.js";
+import { renderWelcome } from "./views/onboarding.js";
 
 export function go(v) {
   state.view = v;
@@ -22,5 +23,6 @@ export function render() {
   else if (state.view === "results" && state.session) renderResults();
   else if (state.view === "dashboard") renderDashboard();
   else if (state.view === "profile") renderProfile();
+  else if (state.view === "welcome") renderWelcome();
   else renderHome();
 }

@@ -7,7 +7,7 @@ import { store } from "../storage.js";
 import { esc, fmt, clock, pct, dayKey } from "../utils.js";
 import { dashData, daysToExam, countdownText, initialsOf } from "../logic.js";
 import { IC } from "../ui/icons.js";
-import { appbarHTML, reviewSectionHTML, levelSectionHTML, currentStreak } from "./shared.js";
+import { appbarHTML, reviewSectionHTML, levelSectionHTML, planSectionHTML, currentStreak } from "./shared.js";
 import { levelFor } from "../xp.js";
 import { streakSummary } from "../streak.js";
 
@@ -72,6 +72,8 @@ export function renderDashboard() {
         ${streak.count > 0 ? `<p class="small muted">${streakText.rest}</p>` : ""}
       </div>
     </header>
+
+    ${planSectionHTML()}
 
     ${levelSectionHTML()}
 

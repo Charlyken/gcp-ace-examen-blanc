@@ -49,6 +49,11 @@ export function renderProfile() {
         <p class="small muted">« Système » suit le réglage clair ou sombre de ton appareil.</p>
       </section>
     </form>
+    <section class="card" aria-labelledby="h-level-test">
+      <h2 id="h-level-test">Test de niveau</h2>
+      <p class="small muted">10 questions, 2 par domaine : il met à jour ton plan d'entraînement et ta maîtrise par domaine. Tu peux le refaire quand tu veux.</p>
+      <div class="row"><button class="btn" data-action="retake-placement" type="button">${state.onboarding.placement ? "Refaire le test de niveau" : "Faire le test de niveau"}</button></div>
+    </section>
     ${installCardHTML()}
     <section class="card" aria-labelledby="h-data">
       <h2 id="h-data">Tes données</h2>

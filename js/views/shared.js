@@ -7,6 +7,8 @@ import { reviewPlan } from "../srs.js";
 import { dayStreak, streakSummary } from "../streak.js";
 import { levelFor, xpRulesText } from "../xp.js";
 import { installText } from "../install.js";
+import { buildPlan } from "../onboarding.js";
+import { QUESTIONS } from "../data.js";
 import { pwaStatus, onPwaChange } from "../pwa.js";
 import { loadSession } from "../session.js";
 import { IC } from "../ui/icons.js";
@@ -114,3 +116,25 @@ export function installCardHTML() {
 }
 // Quand l'état PWA change (invite d'installation reçue, hors ligne prêt), on remplace la carte si elle est affichée.
 onPwaChange(() => { const el = document.getElementById("install-card"); if (el) el.outerHTML = installCardHTML(); });
+
+// Plan personnalisé issu du test de niveau (voir onboarding.js) ; null si le test n'a pas été fait.
+export const currentPlan = () => buildPlan({ placement: state.onboarding.placement, profile: state.profile, today: dayKey(), bankSize: QUESTIONS.length, seen: Object.keys(state.stats).length });
+
+// Carte « Ton plan » : niveau estimé et étapes ; sans test, invitation à le passer (le tableau de bord n'est jamais vide de conseil).
+export function planSectionHTML() {
+  const plan = currentPlan();
+  if (!plan) {
+    return `<section class="card" aria-labelledby="h-plan0">
+      <div class="review-main">
+        <span class="mode-ic">${IC.target}</span>
+        <div class="review-text"><h2 id="h-plan0">Premiers pas</h2><p class="small muted">Passe le test de niveau (10 questions, environ 5 minutes) : il initialise ta maîtrise par domaine et construit ton plan d'entraînement.</p></div>
+        <div class="review-cta"><button class="btn btn-primary" data-action="retake-placement">Faire le test de niveau ${IC.next}</button></div>
+      </div>
+    </section>`;
+  }
+  return `<section class="card" aria-labelledby="h-plan">
+    <div class="row spread"><h2 id="h-plan">Ton plan</h2><span class="pill mini ${plan.level.key === "solid" ? "ok" : ""}">Niveau estimé : ${esc(plan.level.label)} · <span class="num">${plan.pct} %</span></span></div>
+    <ol class="plan-steps">${plan.steps.map(st => `<li><span>${esc(st.text)}</span>${st.action ? `<button class="btn btn-sm" data-action="${st.action.name}"${st.action.d ? ` data-d="${st.action.d}"` : ""}>${esc(st.action.label)}</button>` : ""}</li>`).join("")}</ol>
+    <p class="small muted">Estimation faite sur ${plan.total} questions du test de niveau. <button class="btn btn-ghost btn-sm" data-action="retake-placement" type="button">Refaire le test</button></p>
+  </section>`;
+}

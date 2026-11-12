@@ -1,5 +1,5 @@
 /* Vue : résultats d'une session. */
-import { CONFIG } from "../config.js";
+import { CONFIG, PLACEMENT } from "../config.js";
 import { DOMAINS } from "../data.js";
 import { app } from "../dom.js";
 import { state } from "../state.js";
@@ -7,7 +7,7 @@ import { esc, fmt, clock, pct, whenText } from "../utils.js";
 import { compute } from "../logic.js";
 import { IC } from "../ui/icons.js";
 import { countUp, confetti } from "../ui/effects.js";
-import { docLinkHTML, currentReviewPlan } from "./shared.js";
+import { docLinkHTML, currentReviewPlan, planSectionHTML } from "./shared.js";
 import { levelFor } from "../xp.js";
 import { sessionTitle } from "../logic.js";
 
@@ -36,8 +36,8 @@ export function renderResults() {
 `;
 
   // Révision du jour : résumé du planning (ce qui reste aujourd'hui, prochaine échéance).
-  const isReview = s.kind === "review", isLesson = s.kind === "lesson";
-  const isSeries = isReview || isLesson;     // séries courtes : le seuil de 70 % de l'examen n'a pas de sens
+  const isReview = s.kind === "review", isLesson = s.kind === "lesson", isPlacement = s.kind === "placement";
+  const isSeries = isReview || isLesson || isPlacement;     // séries courtes : le seuil de 70 % de l'examen n'a pas de sens
   const plan = isReview ? currentReviewPlan() : null;
   const plural = n => n > 1 ? "s" : "";
   const planningHTML = !isReview ? "" : `
@@ -86,7 +86,7 @@ export function renderResults() {
   <main class="wrap ${state.celebrate ? "stagger" : ""}">
     <header style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
       <span class="tag">${sessionTitle(s, "Entraînement libre")} · résultats</span>
-      <h1>${s.timeUp ? "Temps écoulé" : passed ? "Bien joué" : isReview ? "Révision terminée" : isLesson ? "Leçon terminée" : "Session terminée"}</h1>
+      <h1>${s.timeUp ? "Temps écoulé" : passed ? "Bien joué" : isReview ? "Révision terminée" : isLesson ? "Leçon terminée" : isPlacement ? "Test terminé" : "Session terminée"}</h1>
     </header>
 
     <section class="card" aria-label="Score global">
@@ -113,6 +113,8 @@ export function renderResults() {
     </section>
 
     ${xpHTML}
+
+    ${isPlacement ? (state.onboarding.placement ? planSectionHTML() : `<section class="card"><p class="small muted">Le test est trop court pour estimer un niveau : il faut au moins ${PLACEMENT.minForLevel} questions validées. Tu peux le refaire quand tu veux depuis ton profil.</p></section>`) : ""}
 
     ${planningHTML}
 
@@ -143,6 +145,8 @@ export function renderResults() {
         ? (plan.due > 0
           ? `<button class="btn btn-primary" data-action="new-review">Encore une série (${plan.batch}) ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
           : `<button class="btn btn-primary" data-action="home">Retour à l'accueil ${IC.next}</button>`)
+        : isPlacement
+          ? `<button class="btn btn-primary" data-action="new-lesson">Commencer ma première leçon ${IC.next}</button><button class="btn" data-action="nav" data-view="dashboard">Voir mon tableau de bord</button>`
         : isLesson
           ? `<button class="btn btn-primary" data-action="new-lesson">Encore une leçon ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
           : `<button class="btn btn-primary" data-action="${s.mode === "exam" ? "new-exam" : "home"}">${s.mode === "exam" ? "Nouvel examen blanc" : "Nouvelle session"} ${IC.next}</button>

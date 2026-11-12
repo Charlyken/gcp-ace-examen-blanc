@@ -1,7 +1,7 @@
 /* Export et import des données de l'utilisateur (JSON). Le format et sa validation sont dans backup.js (pur). */
 import { KEYS, STORAGE_VERSION } from "./config.js";
 import { Q_BY_ID } from "./data.js";
-import { state, saveStats, saveProfile, applyTheme } from "./state.js";
+import { state, saveStats, saveProfile, saveOnboarding, applyTheme } from "./state.js";
 import { store } from "./storage.js";
 import { buildExport, parseImport } from "./backup.js";
 import { dayKey } from "./utils.js";
@@ -9,7 +9,7 @@ import { toast } from "./ui/dialog.js";
 import { renderProfile } from "./views/profile.js";
 
 export function exportData() {
-  const data = buildExport({ profile: state.profile, stats: state.stats, activity: state.activity, history: store.get(KEYS.history) || [], xp: state.xp }, STORAGE_VERSION);
+  const data = buildExport({ profile: state.profile, stats: state.stats, activity: state.activity, history: store.get(KEYS.history) || [], xp: state.xp, onboarding: state.onboarding }, STORAGE_VERSION);
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   const a = document.createElement("a"); a.href = url; a.download = `gcp-ace-progression-${dayKey()}.json`;
   document.body.appendChild(a); a.click(); a.remove();
@@ -27,7 +27,8 @@ export function importData(file) {
       if (d.history) store.set(KEYS.history, d.history);
       if (d.profile) state.profile = d.profile;
       if (d.xp) state.xp = d.xp;
-      saveStats(); saveProfile(); applyTheme();
+      if (d.onboarding) state.onboarding = d.onboarding;
+      saveStats(); saveProfile(); saveOnboarding(); applyTheme();
       renderProfile(); toast("Données importées");
     } catch (e) { toast("Fichier non reconnu"); }
   };
