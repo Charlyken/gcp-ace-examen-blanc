@@ -102,7 +102,7 @@ export function renderResults() {
           ${isSeries
             ? `<span class="pill ${passed ? "ok" : ""}">${passed ? IC.check + "Très bien" : "À consolider"}</span>`
             : `<span class="pill ${passed ? "ok" : "ko"}">${passed ? IC.check + "Au-dessus du seuil" : IC.cross + "Sous le seuil"} de ${CONFIG.passPct} %</span>`}
-          <span style="font:500 1.3rem var(--font-display)"><span class="num">${r.ok} / ${r.total}</span> bonnes réponses</span>
+          <span style="font:500 var(--text-xl) var(--font-display)"><span class="num">${r.ok} / ${r.total}</span> bonnes réponses</span>
           <div class="facts">
             ${s.mode === "exam" ? `<span class="fact">Temps utilisé <b>${clock(usedMs)}</b></span>` : ""}
             ${empty ? `<span class="fact"><b>${empty}</b> sans réponse</span>` : ""}
