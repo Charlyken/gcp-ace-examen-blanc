@@ -39,7 +39,7 @@ export function renderHome() {
     ? `<div class="note"><p class="small"><strong>Examen en cours</strong> : ${Object.keys(exam.answers).filter(k => exam.answers[k].length).length} réponse(s) sur ${exam.ids.length}, <span class="num">${clock(exam.remainingMs)}</span> restantes.</p>
        <div class="row"><button class="btn btn-primary" data-action="resume" data-mode="exam">Reprendre ${IC.next}</button>
        <button class="btn" data-action="ask-new-exam">Nouvel examen</button></div></div>`
-    : `<div class="row"><button class="btn btn-primary" data-action="new-exam">Démarrer l'examen ${IC.next}</button>
+    : `<div class="row"><button class="btn btn-primary" data-action="new-exam" data-delay>Démarrer l'examen ${IC.next}</button>
        ${exam && exam.finished ? `<button class="btn" data-action="show-results" data-mode="exam">Dernier résultat</button>` : ""}</div>`;
 
   const countdown = countdownText(state.profile);
