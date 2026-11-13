@@ -9,12 +9,21 @@ import { renderResults } from "./views/results.js";
 import { updatePracticeCount } from "./views/home.js";
 import { readProfileForm, previewAvatar } from "./views/profile.js";
 import { importData } from "./data-io.js";
+import { REDUCED } from "./ui/effects.js";
+
+// Boutons marqués data-delay : l'action part après ce délai, pour laisser voir l'onde au clic avant le changement d'écran.
+const CLICK_DELAY_MS = 120;
+let pending = false;
 
 export function initEvents() {
   document.addEventListener("click", e => {
     const el = e.target.closest("[data-action]");
-    if (el && !el.disabled && actions[el.dataset.action]) actions[el.dataset.action](el);
-    else if (e.target === overlay) closeDialog();
+    if (el && !el.disabled && actions[el.dataset.action]) {
+      if (!el.hasAttribute("data-delay") || REDUCED) return void actions[el.dataset.action](el);
+      if (pending) return;                                  // double-clic : une seule navigation
+      pending = true;
+      setTimeout(() => { pending = false; if (el.isConnected && !el.disabled) actions[el.dataset.action](el); }, CLICK_DELAY_MS);
+    } else if (e.target === overlay) closeDialog();
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !overlay.hidden) closeDialog(); });
 

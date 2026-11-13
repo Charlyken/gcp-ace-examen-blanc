@@ -85,9 +85,9 @@ export function renderHome() {
           ${dkeys.map((d, i) => `<label class="chip d${d}"><input type="checkbox" id="dom-${d}" value="${d}" checked><span>${esc(DOMAINS[d].short)} <span class="num">${counts[i]}</span></span></label>`).join("")}
         </div>
         <button class="btn btn-ghost btn-sm" data-action="toggle-domains" id="btn-toggle-domains" type="button">Tout désélectionner</button>
-        <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" id="btn-practice">Commencer</button>
-        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">${prac.kind ? resumeLabel(prac) : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
-        ${errs.length ? `<button class="btn" data-action="new-errors">Revoir mes erreurs (${errs.length})</button>` : ""}</div>
+        <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" data-delay id="btn-practice">Commencer</button>
+        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice" data-delay>${prac.kind ? resumeLabel(prac) : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
+        ${errs.length ? `<button class="btn" data-action="new-errors" data-delay>Revoir mes erreurs (${errs.length})</button>` : ""}</div>
       </section>
     </div>
 
