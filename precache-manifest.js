@@ -1,7 +1,7 @@
 /* Fichier GÉNÉRÉ par `npm run build:pwa` : ne pas modifier à la main.
    Version du cache et liste des fichiers précachés par sw.js. À régénérer après toute modification de l'application. */
 self.PRECACHE = {
-  "version": "394815af5fff",
+  "version": "6170f68e0869",
   "files": [
     "icons/apple-touch-icon.png",
     "icons/icon-192.png",

@@ -40,7 +40,7 @@ export function confetti() {
 export function initEffects() {
   document.addEventListener("pointerdown", e => {
     if (REDUCED) return;
-    const el = e.target.closest(".btn, .opt:not(.locked), .nav-grid button, .chip span");
+    const el = e.target.closest(".btn, .opt:not(.locked), .nav-grid button, .chip > span");
     if (!el || el.disabled) return;
     const r = el.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2;
     const s = document.createElement("span"); s.className = "ripple";

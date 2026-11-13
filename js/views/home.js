@@ -116,12 +116,18 @@ export function renderHome() {
   updatePracticeCount();
 }
 export function selectedDomains() { return Array.from(document.querySelectorAll("#domain-chips input:checked")).map(i => Number(i.value)); }
+// Met à jour le libellé sans toucher aux autres enfants : un `textContent =` supprimerait l'onde au clic en cours.
+function setLabel(el, text) {
+  const node = Array.from(el.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+  if (!node) el.prepend(text);
+  else if (node.nodeValue !== text) node.nodeValue = text;
+}
 export function updatePracticeCount() {
   const btn = document.getElementById("btn-practice"); if (!btn) return;
   const doms = selectedDomains();
   const n = QUESTIONS.filter(q => doms.includes(q.domain)).length;
-  btn.textContent = n ? `Commencer (${n} questions)` : "Choisis au moins un domaine";
+  setLabel(btn, n ? `Commencer (${n} questions)` : "Choisis au moins un domaine");
   btn.disabled = !n;
   const t = document.getElementById("btn-toggle-domains");
-  if (t) t.textContent = doms.length === Object.keys(DOMAINS).length ? "Tout désélectionner" : "Tout sélectionner";
+  if (t) setLabel(t, doms.length === Object.keys(DOMAINS).length ? "Tout désélectionner" : "Tout sélectionner");
 }

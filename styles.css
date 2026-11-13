@@ -211,8 +211,8 @@ svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor
 .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chip { position: relative; }
 .chip input { position: absolute; opacity: 0; inset: 0; }
-.chip span { position: relative; overflow: hidden; display: inline-flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); cursor: pointer; background: var(--color-surface); color: var(--color-text-secondary); transition: background .2s, color .2s, border-color .2s; }
-.chip span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dc, var(--color-primary)); transition: transform .2s var(--ease); }
+.chip span:not(.ripple) { position: relative; overflow: hidden; display: inline-flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-pill); font-size: var(--text-sm); cursor: pointer; background: var(--color-surface); color: var(--color-text-secondary); transition: background .2s, color .2s, border-color .2s; }
+.chip span:not(.ripple)::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dc, var(--color-primary)); transition: transform .2s var(--ease); }
 .chip input:checked + span { background: var(--color-primary-soft); border-color: var(--color-primary); color: var(--color-primary); font-weight: 500; }
 .chip input:checked + span::before { content: "✓"; width: auto; height: auto; background: none; border-radius: 0; font: 700 var(--text-caption)/1 var(--font-body); color: var(--color-primary); }
 .chip input:not(:checked) + span { color: var(--color-text-secondary); }
