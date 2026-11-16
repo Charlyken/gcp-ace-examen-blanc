@@ -87,7 +87,7 @@ export function renderDashboard() {
     <section class="card" aria-labelledby="h-chart">
       <div class="row spread"><h2 id="h-chart">Évolution des scores</h2>${n ? `<span class="small muted">${nShown} dernier${nShown > 1 ? "s" : ""} examen${nShown > 1 ? "s" : ""} blanc${nShown > 1 ? "s" : ""}</span>` : ""}</div>
       ${n ? scoreChart(d.history) + `<div class="legend"><span><i class="sw-ok"></i>Au-dessus du seuil</span><span><i class="sw-ko"></i>Sous le seuil</span><span><i class="ln-thr"></i>Seuil ${CONFIG.passPct} %</span>${state.profile.target !== CONFIG.passPct ? `<span><i class="ln-tgt"></i>Objectif ${state.profile.target} %</span>` : ""}</div>`
-        : `<div class="note empty"><p class="small"><strong>Aucun examen blanc pour l'instant.</strong> Passe un premier examen : ta courbe de progression apparaîtra ici.</p><div class="row"><button class="btn btn-primary btn-sm" data-action="new-exam">Lancer un examen blanc ${IC.next}</button></div></div>`}
+        : `<div class="note empty"><p class="small"><strong>Aucun examen blanc pour l'instant.</strong> Passe un premier examen : ta courbe de progression apparaîtra ici.</p><div class="row"><button class="btn btn-primary btn-sm" data-action="new-exam" data-delay>Lancer un examen blanc ${IC.next}</button></div></div>`}
     </section>
 
     <section class="card" aria-labelledby="h-act">
@@ -107,14 +107,14 @@ export function renderDashboard() {
           <td class="r num">${x.ok}</td>
           <td class="r">${x.tried ? `<span class="pill ${x.rate >= CONFIG.passPct ? "ok" : "ko"} mini num">${x.rate} %</span>` : `<span class="muted">–</span>`}</td>
           <td><span class="wbar" title="${x.mastery} % des questions du domaine réussies"><i style="width:${x.mastery}%"></i></span></td>
-          <td class="r"><button class="btn btn-ghost btn-sm" data-action="practice-domain" data-d="${x.d}">S'entraîner</button></td>
+          <td class="r"><button class="btn btn-ghost btn-sm" data-action="practice-domain" data-d="${x.d}" data-delay>S'entraîner</button></td>
         </tr>`).join("")}</tbody>
         <tfoot><tr><td>Total</td><td class="r num muted">100 %</td><td class="r num">${d.tried}/${QUESTIONS.length}</td><td class="r num">${d.mastered}</td><td class="r num">${d.tried ? `${pct(d.mastered, d.tried)} %` : "–"}</td><td><span class="wbar"><i style="width:${pct(d.mastered, QUESTIONS.length)}%"></i></span></td><td></td></tr></tfoot>
       </table></div>
     </section>
 
     <section class="card" aria-labelledby="h-err">
-      <div class="row spread"><h2 id="h-err">Questions à retravailler</h2>${d.errs.length ? `<button class="btn btn-sm" data-action="new-errors">Revoir mes erreurs (${d.errs.length}) ${IC.next}</button>` : ""}</div>
+      <div class="row spread"><h2 id="h-err">Questions à retravailler</h2>${d.errs.length ? `<button class="btn btn-sm" data-action="new-errors" data-delay>Revoir mes erreurs (${d.errs.length}) ${IC.next}</button>` : ""}</div>
       ${d.errs.length ? `<ul class="errlist">${d.errs.slice(0, 6).map(q => `<li><span class="tag dtag d${q.domain}">${esc(DOMAINS[q.domain].short)}</span><span>${fmt(q.q.length > 140 ? q.q.slice(0, 140) + "…" : q.q)}</span><span class="small muted num">${state.stats[q.id].n} essai${state.stats[q.id].n > 1 ? "s" : ""}</span></li>`).join("")}</ul>${d.errs.length > 6 ? `<p class="small muted">… et ${d.errs.length - 6} autre${d.errs.length - 6 > 1 ? "s" : ""}.</p>` : ""}`
         : `<p class="muted">${d.tried ? "Aucune erreur en attente : toutes les questions abordées ont été réussies à la dernière tentative." : "Commence un entraînement : tes erreurs apparaîtront ici pour être rejouées."}</p>`}
     </section>

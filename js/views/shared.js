@@ -41,11 +41,11 @@ export function reviewSectionHTML() {
   if (live) {
     const done = Object.keys(prac.validated).length;
     text = `Série en cours : <b class="num">${done}</b> sur <b class="num">${prac.ids.length}</b> questions validées.`;
-    cta = `<button class="btn btn-primary" data-action="resume" data-mode="practice">Reprendre la révision ${IC.next}</button>`;
+    cta = `<button class="btn btn-primary" data-action="resume" data-mode="practice" data-delay>Reprendre la révision ${IC.next}</button>`;
   } else if (plan.due > 0) {
     title += ` · ${plan.due} question${s_(plan.due)}`;
     text = `Les questions dont l'échéance est arrivée, les plus en retard d'abord.${plan.batch < plan.due ? ` Par séries de ${plan.batch} (ton objectif quotidien).` : ""}`;
-    cta = `<button class="btn btn-primary" data-action="new-review">Réviser ${plan.batch} question${s_(plan.batch)} ${IC.next}</button>`;
+    cta = `<button class="btn btn-primary" data-action="new-review" data-delay>Réviser ${plan.batch} question${s_(plan.batch)} ${IC.next}</button>`;
   } else if (plan.next) {
     text = `<strong>Rien à réviser aujourd'hui.</strong> Prochaine révision ${whenText(plan.next.days)} : <b class="num">${plan.next.count}</b> question${s_(plan.next.count)}.`;
   } else {

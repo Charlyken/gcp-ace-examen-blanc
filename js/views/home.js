@@ -40,7 +40,7 @@ export function renderHome() {
        <div class="row"><button class="btn btn-primary" data-action="resume" data-mode="exam" data-delay>Reprendre ${IC.next}</button>
        <button class="btn" data-action="ask-new-exam" data-delay>Nouvel examen</button></div></div>`
     : `<div class="row"><button class="btn btn-primary" data-action="new-exam" data-delay>Démarrer l'examen ${IC.next}</button>
-       ${exam && exam.finished ? `<button class="btn" data-action="show-results" data-mode="exam">Dernier résultat</button>` : ""}</div>`;
+       ${exam && exam.finished ? `<button class="btn" data-action="show-results" data-mode="exam" data-delay>Dernier résultat</button>` : ""}</div>`;
 
   const countdown = countdownText(state.profile);
   app.innerHTML = `
@@ -52,8 +52,8 @@ export function renderHome() {
         <h1>Prépare ton Associate Cloud Engineer</h1>
         <p class="muted">${QUESTIONS.length} questions sur les 5 domaines de l'examen Google Cloud, dont ${multi} à réponses multiples. Ta progression reste enregistrée dans ce navigateur.</p>
         <div class="row">
-          <button class="btn btn-primary" data-action="${hero.a}"${hero.m ? ` data-mode="${hero.m}"` : ""}>${hero.t} ${IC.next}</button>
-          ${heroLesson ? `<button class="btn" data-action="new-lesson">Leçon courte · 5 min</button>` : ""}
+          <button class="btn btn-primary" data-action="${hero.a}"${hero.m ? ` data-mode="${hero.m}"` : ""} data-delay>${hero.t} ${IC.next}</button>
+          ${heroLesson ? `<button class="btn" data-action="new-lesson" data-delay>Leçon courte · 5 min</button>` : ""}
         </div>
       </div>
       <div class="art" aria-hidden="true"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
@@ -94,7 +94,7 @@ export function renderHome() {
     <section class="card" aria-labelledby="h-dom">
       <div class="row spread"><h2 id="h-dom">Ta maîtrise par domaine</h2>${hasStats ? `<span class="small muted">Questions réussies à ta dernière tentative</span>` : ""}</div>
       ${hasStats ? `<div class="note focus"><p class="small"><strong>À travailler en priorité :</strong> ${esc(DOMAINS[dkeys[weak]].name)} <span class="num muted">(${mast[weak]}/${counts[weak]})</span></p>
-        <button class="btn btn-primary btn-sm" data-action="practice-domain" data-d="${dkeys[weak]}">S'entraîner sur ce domaine ${IC.next}</button></div>`
+        <button class="btn btn-primary btn-sm" data-action="practice-domain" data-d="${dkeys[weak]}" data-delay>S'entraîner sur ce domaine ${IC.next}</button></div>`
       : `<div class="note empty"><p class="small"><strong>Pas encore de données.</strong> Fais un premier entraînement : ta progression par domaine s'affichera ici, avec le domaine à travailler en priorité.</p></div>`}
       <ul class="dlist${hasStats ? "" : " idle"}">
         ${dkeys.map((d, i) => `<li class="drow d${d}"><span class="dnum">${d}</span><span>${esc(DOMAINS[d].name)}</span>
