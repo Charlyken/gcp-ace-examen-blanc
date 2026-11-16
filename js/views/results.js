@@ -102,7 +102,7 @@ export function renderResults() {
           ${isSeries
             ? `<span class="pill ${passed ? "ok" : ""}">${passed ? IC.check + "Très bien" : "À consolider"}</span>`
             : `<span class="pill ${passed ? "ok" : "ko"}">${passed ? IC.check + "Au-dessus du seuil" : IC.cross + "Sous le seuil"} de ${CONFIG.passPct} %</span>`}
-          <span style="font:500 1.3rem var(--font-display)"><span class="num">${r.ok} / ${r.total}</span> bonnes réponses</span>
+          <span style="font:500 var(--text-xl) var(--font-display)"><span class="num">${r.ok} / ${r.total}</span> bonnes réponses</span>
           <div class="facts">
             ${s.mode === "exam" ? `<span class="fact">Temps utilisé <b>${clock(usedMs)}</b></span>` : ""}
             ${empty ? `<span class="fact"><b>${empty}</b> sans réponse</span>` : ""}
@@ -126,7 +126,7 @@ export function renderResults() {
           <div class="bar"><i class="${p >= CONFIG.passPct ? "ok" : "ko"}" style="width:${p}%"></i></div>
         </div>`; }).join("")}
       ${weakest && weakPct < CONFIG.passPct
-        ? `<div class="row"><button class="btn" data-action="train-domain" data-domain="${weakest}">${IC.target} S'entraîner sur le domaine ${weakest}</button></div>` : ""}
+        ? `<div class="row"><button class="btn" data-action="train-domain" data-domain="${weakest}" data-delay>${IC.target} S'entraîner sur le domaine ${weakest}</button></div>` : ""}
     </section>
 
     <section class="card" aria-labelledby="h-review">
@@ -141,10 +141,10 @@ export function renderResults() {
     <div class="row">
       ${isReview
         ? (plan.due > 0
-          ? `<button class="btn btn-primary" data-action="new-review">Encore une série (${plan.batch}) ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
+          ? `<button class="btn btn-primary" data-action="new-review" data-delay>Encore une série (${plan.batch}) ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
           : `<button class="btn btn-primary" data-action="home">Retour à l'accueil ${IC.next}</button>`)
         : isLesson
-          ? `<button class="btn btn-primary" data-action="new-lesson">Encore une leçon ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
+          ? `<button class="btn btn-primary" data-action="new-lesson" data-delay>Encore une leçon ${IC.next}</button><button class="btn" data-action="home">Retour à l'accueil</button>`
           : `<button class="btn btn-primary" data-action="${s.mode === "exam" ? "new-exam" : "home"}">${s.mode === "exam" ? "Nouvel examen blanc" : "Nouvelle session"} ${IC.next}</button>
       <button class="btn" data-action="home">Retour à l'accueil</button>`}
     </div>

@@ -37,10 +37,10 @@ export function renderHome() {
 
   const examBlock = examLive
     ? `<div class="note"><p class="small"><strong>Examen en cours</strong> : ${Object.keys(exam.answers).filter(k => exam.answers[k].length).length} réponse(s) sur ${exam.ids.length}, <span class="num">${clock(exam.remainingMs)}</span> restantes.</p>
-       <div class="row"><button class="btn btn-primary" data-action="resume" data-mode="exam">Reprendre ${IC.next}</button>
-       <button class="btn" data-action="ask-new-exam">Nouvel examen</button></div></div>`
-    : `<div class="row"><button class="btn btn-primary" data-action="new-exam">Démarrer l'examen ${IC.next}</button>
-       ${exam && exam.finished ? `<button class="btn" data-action="show-results" data-mode="exam">Dernier résultat</button>` : ""}</div>`;
+       <div class="row"><button class="btn btn-primary" data-action="resume" data-mode="exam" data-delay>Reprendre ${IC.next}</button>
+       <button class="btn" data-action="ask-new-exam" data-delay>Nouvel examen</button></div></div>`
+    : `<div class="row"><button class="btn btn-primary" data-action="new-exam" data-delay>Démarrer l'examen ${IC.next}</button>
+       ${exam && exam.finished ? `<button class="btn" data-action="show-results" data-mode="exam" data-delay>Dernier résultat</button>` : ""}</div>`;
 
   const countdown = countdownText(state.profile);
   app.innerHTML = `
@@ -52,8 +52,8 @@ export function renderHome() {
         <h1>Prépare ton Associate Cloud Engineer</h1>
         <p class="muted">${QUESTIONS.length} questions sur les 5 domaines de l'examen Google Cloud, dont ${multi} à réponses multiples. Ta progression reste enregistrée dans ce navigateur.</p>
         <div class="row">
-          <button class="btn btn-primary" data-action="${hero.a}"${hero.m ? ` data-mode="${hero.m}"` : ""}>${hero.t} ${IC.next}</button>
-          ${heroLesson ? `<button class="btn" data-action="new-lesson">Leçon courte · 5 min</button>` : ""}
+          <button class="btn btn-primary" data-action="${hero.a}"${hero.m ? ` data-mode="${hero.m}"` : ""} data-delay>${hero.t} ${IC.next}</button>
+          ${heroLesson ? `<button class="btn" data-action="new-lesson" data-delay>Leçon courte · 5 min</button>` : ""}
         </div>
       </div>
       <div class="art" aria-hidden="true"><span class="shape s1"></span><span class="shape s2"></span><span class="shape s3"></span><span class="shape s4"></span><span class="shape s5"></span></div>
@@ -85,16 +85,16 @@ export function renderHome() {
           ${dkeys.map((d, i) => `<label class="chip d${d}"><input type="checkbox" id="dom-${d}" value="${d}" checked><span>${esc(DOMAINS[d].short)} <span class="num">${counts[i]}</span></span></label>`).join("")}
         </div>
         <button class="btn btn-ghost btn-sm" data-action="toggle-domains" id="btn-toggle-domains" type="button">Tout désélectionner</button>
-        <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" id="btn-practice">Commencer</button>
-        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice">${prac.kind ? resumeLabel(prac) : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
-        ${errs.length ? `<button class="btn" data-action="new-errors">Revoir mes erreurs (${errs.length})</button>` : ""}</div>
+        <div class="row mode-cta"><button class="btn btn-primary" data-action="new-practice" data-delay id="btn-practice">Commencer</button>
+        ${pracLive ? `<button class="btn" data-action="resume" data-mode="practice" data-delay>${prac.kind ? resumeLabel(prac) : "Reprendre"} (${Object.keys(prac.validated).length}/${prac.ids.length})</button>` : ""}
+        ${errs.length ? `<button class="btn" data-action="new-errors" data-delay>Revoir mes erreurs (${errs.length})</button>` : ""}</div>
       </section>
     </div>
 
     <section class="card" aria-labelledby="h-dom">
       <div class="row spread"><h2 id="h-dom">Ta maîtrise par domaine</h2>${hasStats ? `<span class="small muted">Questions réussies à ta dernière tentative</span>` : ""}</div>
       ${hasStats ? `<div class="note focus"><p class="small"><strong>À travailler en priorité :</strong> ${esc(DOMAINS[dkeys[weak]].name)} <span class="num muted">(${mast[weak]}/${counts[weak]})</span></p>
-        <button class="btn btn-primary btn-sm" data-action="practice-domain" data-d="${dkeys[weak]}">S'entraîner sur ce domaine ${IC.next}</button></div>`
+        <button class="btn btn-primary btn-sm" data-action="practice-domain" data-d="${dkeys[weak]}" data-delay>S'entraîner sur ce domaine ${IC.next}</button></div>`
       : `<div class="note empty"><p class="small"><strong>Pas encore de données.</strong> Fais un premier entraînement : ta progression par domaine s'affichera ici, avec le domaine à travailler en priorité.</p></div>`}
       <ul class="dlist${hasStats ? "" : " idle"}">
         ${dkeys.map((d, i) => `<li class="drow d${d}"><span class="dnum">${d}</span><span>${esc(DOMAINS[d].name)}</span>
@@ -116,12 +116,18 @@ export function renderHome() {
   updatePracticeCount();
 }
 export function selectedDomains() { return Array.from(document.querySelectorAll("#domain-chips input:checked")).map(i => Number(i.value)); }
+// Met à jour le libellé sans toucher aux autres enfants : un `textContent =` supprimerait l'onde au clic en cours.
+function setLabel(el, text) {
+  const node = Array.from(el.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
+  if (!node) el.prepend(text);
+  else if (node.nodeValue !== text) node.nodeValue = text;
+}
 export function updatePracticeCount() {
   const btn = document.getElementById("btn-practice"); if (!btn) return;
   const doms = selectedDomains();
   const n = QUESTIONS.filter(q => doms.includes(q.domain)).length;
-  btn.textContent = n ? `Commencer (${n} questions)` : "Choisis au moins un domaine";
+  setLabel(btn, n ? `Commencer (${n} questions)` : "Choisis au moins un domaine");
   btn.disabled = !n;
   const t = document.getElementById("btn-toggle-domains");
-  if (t) t.textContent = doms.length === Object.keys(DOMAINS).length ? "Tout désélectionner" : "Tout sélectionner";
+  if (t) setLabel(t, doms.length === Object.keys(DOMAINS).length ? "Tout désélectionner" : "Tout sélectionner");
 }
