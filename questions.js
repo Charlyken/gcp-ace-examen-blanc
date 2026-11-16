@@ -218,6 +218,62 @@ export const QUESTIONS = [
     correct: [0, 1],
     explain: "Les stratégies d'autorisation s'héritent du haut vers le bas (organisation, dossiers, projets, ressources) et sont additives : l'accès effectif est l'union des stratégies de la ressource et de ses ancêtres. Un niveau inférieur ne peut donc pas restreindre ce qu'un parent accorde. L'héritage ne remonte jamais vers le parent, la stratégie enfant ne remplace pas celle du parent, et l'héritage va bien jusqu'aux ressources."
   },
+  {
+    id: "d1-12", domain: 1,
+    topic: "gcloud", difficulty: 1,
+    doc: "https://docs.cloud.google.com/sdk/docs/configurations",
+    q: "Vous travaillez sur trois projets avec des comptes différents et vous en avez assez de répéter `--project` et `--account` à chaque commande. Que mettez-vous en place avec `gcloud` ?",
+    options: [
+      "Une configuration `gcloud` nommée par projet, activée avec `gcloud config configurations activate`",
+      "Un nouvel appel à `gcloud auth login` avant chaque changement de projet",
+      "Une installation distincte du SDK Google Cloud pour chaque projet, avec ses propres identifiants dans un dossier séparé",
+      "La commande `gcloud components update` pour changer de projet"
+    ],
+    correct: [0],
+    explain: "Les configurations `gcloud` regroupent un compte, un projet, une région et d'autres propriétés sous un nom ; `gcloud config configurations create` en crée une et `activate` bascule de l'une à l'autre en une commande. Se reconnecter à chaque fois est lent et ne mémorise pas le projet. Installer plusieurs SDK est inutile. `gcloud components update` met à jour les composants du SDK, elle ne change ni de compte ni de projet."
+  },
+  {
+    id: "d1-13", domain: 1,
+    topic: "identity", difficulty: 2,
+    doc: "https://docs.cloud.google.com/iam/docs/principals-overview",
+    q: "Vous devez donner le rôle Lecteur à 40 membres d'une équipe sur un projet, et l'équipe voit régulièrement des arrivées et des départs. Comment éviter de modifier la stratégie IAM à chaque mouvement ?",
+    options: [
+      "Accorder le rôle à un groupe qui contient l'équipe, puis gérer l'appartenance au groupe",
+      "Accorder le rôle à chaque membre individuellement et mettre à jour la liste à chaque mouvement",
+      "Créer un compte partagé dont tous les membres connaissent le mot de passe",
+      "Accorder le rôle à `allAuthenticatedUsers` pour que l'équipe y accède sans configuration"
+    ],
+    correct: [0],
+    explain: "Un groupe est un principal IAM : on lui accorde le rôle une fois, et les arrivées et départs se gèrent dans le groupe, sans toucher à la stratégie du projet. L'attribution individuelle oblige à modifier la stratégie à chaque mouvement. Un compte partagé supprime la traçabilité et pose un problème de sécurité. `allAuthenticatedUsers` désigne n'importe quel compte Google authentifié dans le monde, pas votre équipe."
+  },
+  {
+    id: "d1-14", domain: 1,
+    topic: "billing", difficulty: 2,
+    doc: "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery",
+    q: "La direction veut analyser en détail, avec des requêtes SQL, la répartition des coûts par projet et par service sur plusieurs mois. Que configurez-vous ?",
+    options: [
+      "L'export des données de facturation Cloud vers un jeu de données BigQuery",
+      "Un budget avec des seuils d'alerte à 50 %, 90 % et 100 %",
+      "Un récepteur de journaux d'audit vers Cloud Storage",
+      "Les rapports de facturation de la console, enregistrés chaque mois"
+    ],
+    correct: [0],
+    explain: "L'export de facturation vers BigQuery écrit les lignes de coûts détaillées dans une table que l'on interroge en SQL (par projet, service, étiquette, période). Un budget ne sert qu'à envoyer des alertes. Les journaux d'audit tracent des actions, pas des coûts. Les rapports de la console sont pratiques pour une vue d'ensemble mais ne permettent pas d'analyse SQL."
+  },
+  {
+    id: "d1-15", domain: 1,
+    topic: "apis-quotas", difficulty: 1,
+    doc: "https://docs.cloud.google.com/service-usage/docs/enable-disable",
+    q: "Dans un projet tout juste créé, la commande `gcloud compute instances create` échoue avec le message « Compute Engine API has not been used in project … before or it is disabled ». Que faites-vous ?",
+    options: [
+      "Activer l'API Compute Engine dans le projet, par exemple avec `gcloud services enable compute.googleapis.com`",
+      "Accorder le rôle Propriétaire à l'utilisateur sur le projet",
+      "Demander une augmentation du quota de processeurs",
+      "Créer un compte de service et le définir comme compte par défaut de `gcloud`"
+    ],
+    correct: [0],
+    explain: "Les API d'un service doivent être activées dans chaque projet avant d'être utilisées ; le message dit précisément que l'API est désactivée. `gcloud services enable` l'active. Un rôle plus large n'active pas l'API, et un quota ne s'applique qu'une fois l'API active. Un compte de service ne change rien à l'état de l'API."
+  },
 
   /* ------------------------------------------------------------------
      DOMAINE 2 — Planifier et configurer une solution cloud
@@ -362,6 +418,62 @@ export const QUESTIONS = [
     ],
     correct: [0, 1],
     explain: "En Autopilot, Google provisionne et exploite les nœuds, et vous payez par défaut les ressources (CPU, mémoire, stockage éphémère) demandées par vos pods. La création et le dimensionnement des pools de nœuds caractérisent le mode Standard. Les clusters Autopilot sont régionaux, donc répartis sur plusieurs zones. `kubectl` et l'API Kubernetes s'utilisent normalement dans les deux modes."
+  },
+  {
+    id: "d2-12", domain: 2,
+    topic: "storage", difficulty: 1,
+    doc: "https://docs.cloud.google.com/storage/docs/storage-classes",
+    q: "Des journaux de conformité ne sont consultés qu'une fois par an, au mieux, et doivent être conservés sept ans au coût le plus bas. Quelle classe de stockage Cloud Storage choisissez-vous ?",
+    options: [
+      "Archive",
+      "Standard",
+      "Nearline",
+      "Coldline"
+    ],
+    correct: [0],
+    explain: "Archive est la classe la moins chère au Go stocké, conçue pour un accès moins d'une fois par an ; Coldline vise un accès environ trimestriel, Nearline environ mensuel, et Standard les données fréquemment consultées. Les classes plus chaudes coûteraient plus cher pour des données presque jamais lues."
+  },
+  {
+    id: "d2-13", domain: 2,
+    topic: "databases", difficulty: 2,
+    doc: "https://docs.cloud.google.com/sql/docs/mysql/high-availability",
+    q: "Une application critique utilise Cloud SQL pour MySQL. La base doit survivre à la panne d'une zone avec un basculement automatique. Que configurez-vous ?",
+    options: [
+      "La haute disponibilité de l'instance (configuration régionale avec une instance de secours dans une autre zone)",
+      "Un réplica en lecture créé dans la même zone que l'instance principale, à promouvoir manuellement si celle-ci tombe en panne",
+      "Des sauvegardes automatiques quotidiennes",
+      "Un type de machine plus puissant pour l'instance"
+    ],
+    correct: [0],
+    explain: "La configuration haute disponibilité de Cloud SQL maintient une instance de secours synchrone dans une autre zone de la région et bascule automatiquement en cas de panne de la zone principale. Un réplica en lecture dans la même zone tombe avec elle, et sa promotion est manuelle. Les sauvegardes permettent une restauration, pas un basculement. Une machine plus puissante ne protège pas d'une panne de zone."
+  },
+  {
+    id: "d2-14", domain: 2,
+    topic: "networking", difficulty: 3,
+    doc: "https://docs.cloud.google.com/vpc/docs/shared-vpc",
+    q: "Une organisation compte dix projets appartenant à des équipes différentes. L'équipe réseau veut gérer un seul réseau, avec ses sous-réseaux et ses pare-feu, dans lequel les VM de tous les projets sont connectées. Que mettez-vous en place ?",
+    options: [
+      "Un VPC partagé : un projet hôte détient le réseau et les projets de service y sont rattachés",
+      "Un appairage de réseaux VPC entre chaque paire de projets",
+      "Un VPC distinct par projet avec des règles de pare-feu identiques copiées à la main",
+      "Un tunnel VPN entre chaque paire de projets"
+    ],
+    correct: [0],
+    explain: "Le VPC partagé permet à un projet hôte de posséder le réseau, les sous-réseaux et les règles de pare-feu, tandis que les projets de service y créent leurs ressources : l'administration du réseau est centralisée. L'appairage relie des réseaux qui restent gérés séparément et il n'est pas transitif, donc il faudrait un appairage par paire. Copier les règles à la main multiplie les écarts. Des tunnels VPN entre projets ajoutent de la complexité pour un besoin interne."
+  },
+  {
+    id: "d2-15", domain: 2,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/spot",
+    q: "Un traitement par lots nocturne est tolérant aux interruptions et doit coûter le moins possible. Quelles affirmations sur les VM Spot sont exactes ?",
+    options: [
+      "Compute Engine peut les arrêter ou les supprimer à tout moment pour récupérer la capacité",
+      "Elles sont proposées à un tarif fortement réduit par rapport aux VM à la demande",
+      "Elles ont une durée d'exécution maximale de 24 heures",
+      "Elles ne sont disponibles qu'avec un engagement d'utilisation d'un an ou de trois ans"
+    ],
+    correct: [0, 1],
+    explain: "Les VM Spot utilisent la capacité excédentaire de Compute Engine : leur prix est très inférieur à celui des VM à la demande, mais Compute Engine peut les arrêter ou les supprimer à tout moment pour récupérer cette capacité. Elles n'ont ni durée minimale ni durée maximale d'exécution (sauf limite que vous fixez vous-même) et ne demandent aucun engagement. Elles conviennent donc aux traitements tolérants aux interruptions, comme ce traitement nocturne."
   },
 
   /* ------------------------------------------------------------------
@@ -593,6 +705,90 @@ export const QUESTIONS = [
     correct: [0],
     explain: "`kubectl autoscale` crée un HorizontalPodAutoscaler qui ajuste le nombre de pods entre les bornes selon la métrique cible. `kubectl scale` fixe un nombre de pods une fois pour toutes. `clusters resize` change le nombre de nœuds, pas le nombre de pods. `rollout restart` redémarre les pods sans modifier leur nombre."
   },
+  {
+    id: "d3-17", domain: 3,
+    topic: "serverless", difficulty: 2,
+    doc: "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
+    q: "Vous venez de déployer une nouvelle révision d'un service Cloud Run. Vous voulez lui envoyer 10 % du trafic pour la valider avant de basculer tout le trafic. Comment procédez-vous ?",
+    options: [
+      "Répartir le trafic entre les révisions, par exemple avec `gcloud run services update-traffic` et l'option `--to-revisions`",
+      "Créer un second service Cloud Run pour la nouvelle version, puis placer un équilibreur de charge qui répartit les requêtes entre les deux services",
+      "Supprimer l'ancienne révision pour que la nouvelle reçoive tout le trafic",
+      "Déployer la nouvelle version dans un autre projet et changer l'adresse DNS"
+    ],
+    correct: [0],
+    explain: "Cloud Run permet de répartir le trafic d'un même service entre plusieurs révisions selon des pourcentages, ce qui sert au déploiement progressif et au retour arrière immédiat. Un second service avec un équilibreur et un changement de DNS compliquent inutilement la mise en œuvre. Supprimer l'ancienne révision envoie 100 % du trafic à la nouvelle, sans validation progressive."
+  },
+  {
+    id: "d3-18", domain: 3,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/instance-groups/autohealing-instances-in-migs",
+    q: "Un site web tourne sur un groupe d'instances géré. Vous voulez que les VM qui cessent de répondre aux vérifications d'état HTTP soient recréées automatiquement. Que configurez-vous ?",
+    options: [
+      "La réparation automatique du groupe, avec un contrôle d'état",
+      "L'autoscaling du groupe en fonction de l'utilisation du processeur",
+      "Un équilibreur de charge interne devant le groupe",
+      "Un calendrier d'instantanés pour les disques des VM"
+    ],
+    correct: [0],
+    explain: "La réparation automatique d'un groupe d'instances géré s'appuie sur un contrôle d'état : une VM qui échoue de façon répétée est recréée. L'autoscaling ajuste le nombre de VM selon la charge, il ne remplace pas une VM défaillante. Un équilibreur cesse seulement de lui envoyer du trafic. Les instantanés protègent les données mais ne relancent pas la VM."
+  },
+  {
+    id: "d3-19", domain: 3,
+    topic: "gke", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/cluster-autoscaler",
+    q: "Dans un cluster GKE, des pods restent en attente faute de ressources. Vous voulez que des nœuds soient ajoutés automatiquement, puis retirés quand ils sont sous-utilisés. Qu'activez-vous ?",
+    options: [
+      "L'autoscaler de cluster sur le pool de nœuds, avec un nombre minimal et maximal de nœuds",
+      "L'autoscaler horizontal de pods (HPA) sur le déploiement",
+      "L'autoscaler vertical de pods (VPA) sur le déploiement",
+      "Un redimensionnement manuel du pool avec `gcloud container clusters resize`"
+    ],
+    correct: [0],
+    explain: "L'autoscaler de cluster ajoute des nœuds quand des pods ne peuvent pas être planifiés et en supprime quand ils sont peu utilisés, dans les limites fixées. Le HPA règle le nombre de pods et le VPA leurs demandes de ressources : aucun des deux n'ajoute de nœuds. Le redimensionnement manuel n'est pas automatique."
+  },
+  {
+    id: "d3-20", domain: 3,
+    topic: "messaging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/pubsub/docs/dead-letter-topics",
+    q: "Certains messages Pub/Sub échouent à chaque traitement et sont renvoyés en boucle, ce qui encombre l'abonnement. Comment les isoler sans les perdre ?",
+    options: [
+      "Configurer un sujet de lettres mortes sur l'abonnement, avec un nombre maximal de tentatives de livraison",
+      "Réduire le délai d'accusé de réception à zéro",
+      "Supprimer l'abonnement et le recréer à chaque erreur",
+      "Augmenter la durée de rétention des messages du sujet afin que les messages en échec restent disponibles plus longtemps"
+    ],
+    correct: [0],
+    explain: "Un sujet de lettres mortes reçoit les messages qui dépassent le nombre maximal de tentatives de livraison : l'abonnement n'est plus encombré et les messages restent disponibles pour être analysés. Un délai d'accusé de réception à zéro provoquerait des renvois immédiats. Recréer l'abonnement perd les messages en attente. La rétention conserve les messages plus longtemps, elle ne les isole pas."
+  },
+  {
+    id: "d3-21", domain: 3,
+    topic: "bigquery", difficulty: 2,
+    doc: "https://docs.cloud.google.com/bigquery/docs/best-practices-performance-compute",
+    q: "Une table BigQuery de 5 To, non clusterisée, contient des événements et presque toutes les requêtes portent sur la dernière semaine. Les coûts à la demande sont élevés. Quelles pratiques réduisent le volume de données analysé ?",
+    options: [
+      "Partitionner la table sur la date de l'événement et filtrer sur cette colonne dans les requêtes",
+      "Sélectionner uniquement les colonnes nécessaires plutôt que `SELECT *`",
+      "Ajouter `LIMIT 1000` à chaque requête afin de n'obtenir qu'un échantillon des lignes de la table",
+      "Ajouter une clause `ORDER BY` sur la date pour que BigQuery lise d'abord les lignes récentes"
+    ],
+    correct: [0, 1],
+    explain: "BigQuery facture les octets lus. Le partitionnement permet de ne lire que les partitions concernées, et son stockage en colonnes fait qu'on ne paie que les colonnes sélectionnées. `LIMIT` réduit le nombre de lignes renvoyées mais pas les octets lus (sur une table non clusterisée), et `ORDER BY` n'en réduit aucun."
+  },
+  {
+    id: "d3-22", domain: 3,
+    topic: "iac", difficulty: 3,
+    doc: "https://docs.cloud.google.com/docs/terraform/resource-management/store-state",
+    q: "Une équipe de plusieurs personnes gère son infrastructure avec Terraform. L'état doit être partagé entre les membres, et deux exécutions simultanées ne doivent pas se marcher dessus. Que faites-vous ?",
+    options: [
+      "Stocker l'état dans un bucket Cloud Storage avec le backend `gcs`, qui verrouille l'état pendant les opérations",
+      "Versionner le fichier `terraform.tfstate` dans le dépôt Git",
+      "Garder l'état en local sur le poste de la personne qui lance les déploiements",
+      "Envoyer le fichier d'état par e-mail avant chaque déploiement"
+    ],
+    correct: [0],
+    explain: "Un backend distant dans Cloud Storage partage l'état entre les membres et le verrouille pendant `plan` et `apply`, ce qui évite les exécutions concurrentes. Le dépôt Git ne verrouille rien, provoque des conflits et expose des valeurs sensibles contenues dans l'état. Un état local ou envoyé par e-mail se désynchronise vite et n'est pas protégé."
+  },
 
   /* ------------------------------------------------------------------
      DOMAINE 4 — Assurer le bon fonctionnement d'une solution cloud
@@ -775,6 +971,48 @@ export const QUESTIONS = [
     ],
     correct: [0, 1],
     explain: "Les instantanés sont incrémentiels et constituent une ressource globale : on peut créer un disque à partir d'un instantané dans n'importe quelle zone ou région, ce qui en fait un moyen de déplacer un disque. On peut les prendre sur un disque en cours d'utilisation (il est seulement conseillé de vider les tampons applicatifs pour la cohérence). À la suppression d'un instantané, les données nécessaires aux suivants sont reportées sur l'instantané suivant : la chaîne reste utilisable."
+  },
+  {
+    id: "d4-14", domain: 4,
+    topic: "logging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/logging/docs/export/configure_export_v2",
+    q: "Des journaux d'audit doivent être conservés cinq ans pour la conformité, au moindre coût, et ne seront presque jamais consultés. Que faites-vous ?",
+    options: [
+      "Créer un récepteur de journaux qui les exporte vers un bucket Cloud Storage de classe Archive",
+      "Porter la rétention des buckets de journaux de Cloud Logging à cinq ans",
+      "Créer un récepteur qui les envoie vers un sujet Pub/Sub",
+      "Copier les journaux à la main chaque mois"
+    ],
+    correct: [0],
+    explain: "Un récepteur de journaux exporte automatiquement les entrées vers Cloud Storage ; la classe Archive est la moins chère pour des données quasiment jamais lues. Conserver cinq ans dans Cloud Logging est possible mais plus coûteux pour ce besoin. Pub/Sub transporte des messages, il ne les stocke pas durablement. Une copie manuelle est source d'oublis."
+  },
+  {
+    id: "d4-15", domain: 4,
+    topic: "monitoring", difficulty: 1,
+    doc: "https://docs.cloud.google.com/monitoring/uptime-checks",
+    q: "Vous voulez être prévenu par e-mail dès que votre site public ne répond plus quand on l'interroge depuis l'extérieur. Que configurez-vous dans Cloud Monitoring ?",
+    options: [
+      "Un contrôle de disponibilité et une règle d'alerte avec un canal de notification par e-mail",
+      "Un récepteur de journaux qui exporte les journaux de l'application vers un jeu de données BigQuery",
+      "Une alerte de budget de facturation",
+      "Un tableau de bord Cloud Trace"
+    ],
+    correct: [0],
+    explain: "Un contrôle de disponibilité interroge périodiquement le service depuis plusieurs régions, et une règle d'alerte envoie une notification (e-mail, par exemple) quand il échoue. Un récepteur de journaux exporte des données sans alerter. Une alerte de budget concerne les coûts. Cloud Trace sert à analyser la latence des requêtes."
+  },
+  {
+    id: "d4-16", domain: 4,
+    topic: "monitoring", difficulty: 2,
+    doc: "https://docs.cloud.google.com/monitoring/agent/ops-agent",
+    q: "Dans Cloud Monitoring, vous voyez l'utilisation du processeur de vos VM mais pas la mémoire utilisée. Que faites-vous pour obtenir ces métriques ?",
+    options: [
+      "Installer l'agent Ops sur les VM",
+      "Activer Cloud Trace dans le projet",
+      "Accorder le rôle Lecteur de Monitoring aux utilisateurs",
+      "Passer les VM à un type de machine plus grand"
+    ],
+    correct: [0],
+    explain: "Les métriques visibles par l'hyperviseur, comme le processeur, sont collectées sans agent, mais la mémoire et l'espace disque se mesurent dans le système d'exploitation : il faut l'agent Ops, qui collecte aussi les journaux. Cloud Trace analyse la latence des requêtes. Le rôle Lecteur règle des droits, pas la collecte. Un type de machine plus grand ne change pas les métriques disponibles."
   },
 
   /* ------------------------------------------------------------------
@@ -963,5 +1201,47 @@ export const QUESTIONS = [
     ],
     correct: [0],
     explain: "Une règle d'organisation s'impose à toutes les ressources situées en dessous, quels que soient les rôles IAM des utilisateurs : même un propriétaire de projet ne peut plus créer de clé. Retirer un rôle ne suffit pas, car d'autres rôles (Propriétaire, Éditeur, Administrateur de clés) contiennent la même autorisation. Une alerte ou un script de nettoyage agissent après coup et laissent une fenêtre d'exposition."
+  },
+  {
+    id: "d5-14", domain: 5,
+    topic: "service-accounts", difficulty: 3,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity",
+    q: "Des pods GKE doivent lire un bucket Cloud Storage avec des droits précis, sans qu'aucune clé de compte de service ne soit téléchargée ni stockée. Que mettez-vous en place ?",
+    options: [
+      "La fédération d'identité de charge de travail pour GKE, qui relie l'identité Kubernetes du pod à des droits IAM",
+      "Une clé JSON de compte de service stockée dans un Secret Kubernetes",
+      "Le rôle de lecture accordé au compte de service par défaut des nœuds, que partagent alors tous les pods exécutés sur ces nœuds",
+      "Une clé de compte de service intégrée dans l'image du conteneur"
+    ],
+    correct: [0],
+    explain: "La fédération d'identité de charge de travail (Workload Identity) permet à un pod de s'authentifier avec son identité Kubernetes et d'obtenir des droits IAM précis, sans clé longue durée à stocker ni à renouveler. Une clé dans un Secret ou dans l'image reste un secret durable qui peut fuiter. Le compte de service des nœuds est partagé par tous les pods du nœud, ce qui viole le moindre privilège."
+  },
+  {
+    id: "d5-15", domain: 5,
+    topic: "secrets", difficulty: 1,
+    doc: "https://docs.cloud.google.com/secret-manager/docs/access-control",
+    q: "Une application Cloud Run doit lire un mot de passe de base de données. Où le stocker, et quel rôle accorder au compte de service de l'application ?",
+    options: [
+      "Dans Secret Manager, avec le rôle Accesseur de secrets sur ce secret",
+      "Dans une variable d'environnement en clair, versionnée dans le dépôt",
+      "Dans un bucket Cloud Storage public",
+      "Dans Secret Manager, avec le rôle Propriétaire sur le projet"
+    ],
+    correct: [0],
+    explain: "Secret Manager stocke les secrets de façon chiffrée, avec versions et journal d'accès ; le rôle Accesseur de secrets donne uniquement la lecture de la valeur, ce qui respecte le moindre privilège. Un mot de passe versionné dans le dépôt ou dans un bucket public est exposé. Le rôle Propriétaire accorderait bien plus que nécessaire."
+  },
+  {
+    id: "d5-16", domain: 5,
+    topic: "iam", difficulty: 2,
+    doc: "https://docs.cloud.google.com/iam/docs/conditions-overview",
+    q: "Un consultant doit avoir un rôle de lecture sur un projet jusqu'au 31 janvier, sans que personne ait à penser à le retirer. Que faites-vous ?",
+    options: [
+      "Accorder le rôle avec une condition IAM basée sur la date et l'heure de la requête",
+      "Accorder le rôle normalement et créer un rappel dans un calendrier pour penser à le retirer à la date prévue",
+      "Accorder le rôle Propriétaire du projet pour une durée courte",
+      "Lui donner l'accès au moyen d'un compte de service partagé"
+    ],
+    correct: [0],
+    explain: "Les conditions IAM limitent l'effet d'une attribution de rôle selon des attributs, dont la date et l'heure de la requête : après la date, l'accès cesse tout seul. Un rappel dépend de la mémoire de quelqu'un. Le rôle Propriétaire est bien trop large. Un compte de service partagé supprime la traçabilité."
   }
 ];
