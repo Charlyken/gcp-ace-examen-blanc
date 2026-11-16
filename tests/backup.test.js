@@ -22,8 +22,8 @@ function planning() {
 
 describe("buildExport", () => {
   test("contient l'identifiant de l'application, la version, la date et toutes les sections", () => {
-    const e = buildExport({ profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3], xp: { total: 40 } }, 1, new Date("2026-11-10T10:00:00Z"));
-    assert.deepEqual(e, { app: APP_ID, version: 1, exportedAt: "2026-11-10T10:00:00.000Z", profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3], xp: { total: 40 } });
+    const e = buildExport({ profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3], xp: { total: 40 }, onboarding: { status: "done" } }, 1, new Date("2026-11-10T10:00:00Z"));
+    assert.deepEqual(e, { app: APP_ID, version: 1, exportedAt: "2026-11-10T10:00:00.000Z", profile: { name: "A" }, stats: { x: 1 }, activity: { y: 2 }, history: [3], xp: { total: 40 }, onboarding: { status: "done" } });
   });
 });
 

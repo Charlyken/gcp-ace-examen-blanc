@@ -1,7 +1,7 @@
 /* Fichier GÉNÉRÉ par `npm run build:pwa` : ne pas modifier à la main.
    Version du cache et liste des fichiers précachés par sw.js. À régénérer après toute modification de l'application. */
 self.PRECACHE = {
-  "version": "cbe094aa1dae",
+  "version": "52452d997892",
   "files": [
     "icons/apple-touch-icon.png",
     "icons/icon-192.png",
@@ -21,6 +21,7 @@ self.PRECACHE = {
     "js/lesson.js",
     "js/logic.js",
     "js/main.js",
+    "js/onboarding.js",
     "js/pwa.js",
     "js/router.js",
     "js/session.js",
@@ -34,6 +35,7 @@ self.PRECACHE = {
     "js/utils.js",
     "js/views/dashboard.js",
     "js/views/home.js",
+    "js/views/onboarding.js",
     "js/views/profile.js",
     "js/views/quiz.js",
     "js/views/results.js",

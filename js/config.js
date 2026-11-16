@@ -5,11 +5,14 @@ export const CONFIG = {
   passPct: 70,           // seuil de réussite indicatif
   lowTimeMs: 10 * 60000  // le chrono passe en rouge sous ce délai
 };
-export const KEYS = { exam: "ace.session.exam", practice: "ace.session.practice", history: "ace.history", stats: "ace.stats", activity: "ace.activity", xp: "ace.xp", profile: "ace.profile", version: "ace.version" };
+export const KEYS = { exam: "ace.session.exam", practice: "ace.session.practice", history: "ace.history", stats: "ace.stats", activity: "ace.activity", xp: "ace.xp", onboarding: "ace.onboarding", profile: "ace.profile", version: "ace.version" };
 export const HISTORY_MAX = 20;    // nombre d'examens blancs conservés dans l'historique
 // À incrémenter dès que le format des données sauvegardées change : les anciennes données sont alors purgées.
 export const STORAGE_VERSION = 1;
 export const LETTERS = "ABCDE";
+
+// Test de niveau (onboarding) : taille, minimum de questions pour estimer un niveau, seuils des niveaux (en %).
+export const PLACEMENT = { size: 10, minForLevel: 5, buildingFrom: 40, solidFrom: 70 };
 
 // Leçon courte (≈ 5 minutes) : taille et composition. Le reste de la leçon est complété par des questions nouvelles.
 export const LESSON = {

@@ -1,12 +1,13 @@
 /* Cycle de vie d'une session : chargement, sauvegarde, chronomètre, démarrage et fin. */
 import { CONFIG, KEYS, HISTORY_MAX } from "./config.js";
 import { QUESTIONS, Q_BY_ID } from "./data.js";
-import { state, record, saveStats, awardXp } from "./state.js";
+import { state, record, saveStats, saveOnboarding, awardXp } from "./state.js";
 import { store } from "./storage.js";
 import { clock, shuffle, dayKey } from "./utils.js";
 import { compute, drawExam, newSession, isSessionUsable } from "./logic.js";
 import { pickReview } from "./srs.js";
 import { pickLesson } from "./lesson.js";
+import { pickPlacement, summarizePlacement, completePlacement, markOnboarding } from "./onboarding.js";
 import { newSessionXp, recordAnswerXp, settleSessionXp } from "./xp.js";
 import { closeDialog } from "./ui/dialog.js";
 import { go, render } from "./router.js";
@@ -61,6 +62,7 @@ export function finish(timeUp) {
   const r = compute(s);
   const settled = settleSessionXp(state.xp, s, r, dayKey());
   state.xp = settled.xp; s.xp = settled.summary;
+  if (s.kind === "placement") { state.onboarding = completePlacement(state.onboarding, summarizePlacement(r), Date.now()); saveOnboarding(); }
   store.set(KEYS[s.mode], s);
   if (s.mode === "exam") r.items.forEach(i => record(i.id, i.status === "ok"));
   saveStats();
@@ -87,6 +89,16 @@ export function startPractice(domains) {
   store.set(KEYS.practice, state.session);
   go("quiz");
 }
+// Test de niveau (onboarding) : 10 questions, 2 par domaine. Les réponses alimentent les cartes de révision, donc la maîtrise par domaine.
+export function startPlacement() {
+  const { ids } = pickPlacement({ questions: QUESTIONS, stats: state.stats });
+  if (!ids.length) return;
+  state.onboarding = markOnboarding(state.onboarding, "started", Date.now()); saveOnboarding();
+  state.session = beginSession(newSession("practice", ids.map(id => Q_BY_ID[id]), null, "placement"));
+  store.set(KEYS.practice, state.session);
+  go("quiz");
+}
+
 // Leçon courte : un mélange de questions à réviser, à consolider et nouvelles (voir lesson.js).
 export function startLesson() {
   const { ids } = pickLesson({ questions: QUESTIONS, stats: state.stats, today: dayKey() });

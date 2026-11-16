@@ -1,15 +1,17 @@
 /* Actions déclenchées par les attributs data-action. */
 import { KEYS } from "./config.js";
 import { DOMAINS, QUESTIONS, Q_BY_ID } from "./data.js";
-import { state, saveStats, record } from "./state.js";
+import { state, saveStats, saveOnboarding, record } from "./state.js";
 import { store } from "./storage.js";
 import { shuffle, isCorrect } from "./utils.js";
 import { newSession, counters } from "./logic.js";
 import { newXp } from "./xp.js";
 import { exportData } from "./data-io.js";
-import { loadSession, save, startTimer, startExam, startPractice, startReview, startLesson, move, finish, beginSession, awardForAnswer } from "./session.js";
+import { loadSession, save, startTimer, startExam, startPractice, startReview, startLesson, startPlacement, move, finish, beginSession, awardForAnswer } from "./session.js";
 import { go } from "./router.js";
 import { promptInstall } from "./pwa.js";
+import { saveWelcomeForm } from "./views/onboarding.js";
+import { markOnboarding } from "./onboarding.js";
 import { renderQuiz, refreshChrome } from "./views/quiz.js";
 import { renderHome, selectedDomains, updatePracticeCount } from "./views/home.js";
 import { openDialog, closeDialog, toast } from "./ui/dialog.js";
@@ -20,6 +22,9 @@ export const actions = {
   "new-practice": () => startPractice(selectedDomains()),
   "new-review": startReview,
   "new-lesson": startLesson,
+  "retake-placement": startPlacement,
+  "onboarding-start": () => { saveWelcomeForm(); startPlacement(); },
+  "onboarding-skip": () => { saveWelcomeForm(); state.onboarding = markOnboarding(state.onboarding, "skipped", Date.now()); saveOnboarding(); state.session = null; go("home"); },
   "practice-all": () => startPractice(Object.keys(DOMAINS).map(Number)),
   "practice-domain": el => startPractice([Number(el.dataset.d)]),
   "toggle-domains": () => {
@@ -41,10 +46,11 @@ export const actions = {
   "export": exportData,
   "install": promptInstall,
   "import": () => { const f = document.getElementById("import-file"); if (f) { f.value = ""; f.click(); } },
-  "ask-reset": () => openDialog("Réinitialiser la progression ?", "Statistiques, activité, points d'expérience, historique des examens et sessions en cours seront effacés. Ton profil est conservé.", "Réinitialiser", "reset"),
+  "ask-reset": () => openDialog("Réinitialiser la progression ?", "Statistiques, activité, points d'expérience, résultat du test de niveau, historique des examens et sessions en cours seront effacés. Ton profil est conservé.", "Réinitialiser", "reset"),
   "reset": () => {
     ["exam", "practice", "history", "stats", "activity", "xp"].forEach(k => store.del(KEYS[k]));
     state.stats = {}; state.activity = {}; state.xp = newXp(); state.session = null;
+    state.onboarding = { ...state.onboarding, placement: null }; saveOnboarding();   // le test de niveau repart de zéro ; l'accueil ne revient pas
     closeDialog(); go("profile"); toast("Progression réinitialisée");
   },
   "quit": () => { save(); state.session = null; go("home"); },   // la session reste enregistrée pour être reprise
