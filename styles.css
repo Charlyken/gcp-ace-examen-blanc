@@ -173,6 +173,11 @@ svg.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor
 .mode-ic svg { width: 26px; height: 26px; }
 .mode-ic.green { background: var(--color-success-bg); color: var(--color-success); }
 .mode-ic.xp { background: var(--color-purple-bg); color: var(--color-g-purple); }
+.welcome { max-width: 760px; }
+.welcome-head { display: flex; flex-direction: column; gap: var(--space-2); align-items: flex-start; }
+.plan-steps { margin: 0; padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-3); }
+.plan-steps li { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
+.plan-steps li > span { flex: 1 1 320px; }
 .install-steps { margin: 0; padding-left: var(--space-6); display: flex; flex-direction: column; gap: var(--space-1); }
 .update-banner { position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 60; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2) var(--space-3);
   width: min(560px, calc(100vw - 32px)); padding: var(--space-3) var(--space-4); border-radius: var(--radius-lg); background: var(--color-text); color: var(--color-bg); box-shadow: var(--shadow-2); font-size: var(--text-sm); }

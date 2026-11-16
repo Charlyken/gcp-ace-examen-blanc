@@ -3,11 +3,12 @@ import { HISTORY_MAX } from "./config.js";
 import { sanitizeProfile } from "./logic.js";
 import { normalizeStats } from "./srs.js";
 import { normalizeXp } from "./xp.js";
+import { normalizeOnboarding } from "./onboarding.js";
 
 export const APP_ID = "gcp-ace-examen-blanc";
 
-export function buildExport({ profile, stats, activity, history, xp }, version, now = new Date()) {
-  return { app: APP_ID, version, exportedAt: now.toISOString(), profile, stats, activity, history, xp };
+export function buildExport({ profile, stats, activity, history, xp, onboarding }, version, now = new Date()) {
+  return { app: APP_ID, version, exportedAt: now.toISOString(), profile, stats, activity, history, xp, onboarding };
 }
 
 // Lit un export. Lève une erreur si le fichier n'en est pas un ; ne renvoie que les sections présentes et valides
@@ -25,5 +26,6 @@ export function parseImport(text, { isKnownId, today }) {
     out.history = d.history.filter(h => h && Number.isFinite(h.date) && Number.isFinite(h.pct) && Number.isFinite(h.ok) && Number.isFinite(h.total)).slice(0, HISTORY_MAX);
   if (d.profile && typeof d.profile === "object") out.profile = sanitizeProfile(d.profile);
   if (d.xp && typeof d.xp === "object") out.xp = normalizeXp(d.xp, today);
+  if (d.onboarding && typeof d.onboarding === "object") out.onboarding = normalizeOnboarding(d.onboarding);
   return out;
 }

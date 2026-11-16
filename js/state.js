@@ -5,6 +5,7 @@ import { sanitizeProfile } from "./logic.js";
 import { normalizeStats, needsMigration, reviewCard } from "./srs.js";
 import { addActivity } from "./streak.js";
 import { normalizeXp, awardAnswer } from "./xp.js";
+import { normalizeOnboarding } from "./onboarding.js";
 import { dayKey } from "./utils.js";
 
 migrateStorage();
@@ -26,7 +27,9 @@ export const state = {
   activity: store.get(KEYS.activity) || {},
   profile: sanitizeProfile(store.get(KEYS.profile)),
   // Points d'expérience : { total, day, ids } (ids = questions déjà récompensées le jour `day`), voir xp.js
-  xp: normalizeXp(store.get(KEYS.xp), dayKey())
+  xp: normalizeXp(store.get(KEYS.xp), dayKey()),
+  // Onboarding : { status, at, placement } (voir onboarding.js)
+  onboarding: normalizeOnboarding(store.get(KEYS.onboarding))
 };
 
 export function record(id, ok) {
@@ -42,6 +45,7 @@ export function awardXp(id, ok) {
 // Enregistre la progression : statistiques, activité et points d'expérience.
 export const saveStats = () => { store.set(KEYS.stats, state.stats); store.set(KEYS.activity, state.activity); store.set(KEYS.xp, state.xp); };
 export const saveProfile = () => store.set(KEYS.profile, state.profile);
+export const saveOnboarding = () => store.set(KEYS.onboarding, state.onboarding);
 export function applyTheme() {
   if (state.profile.theme === "auto") document.documentElement.removeAttribute("data-theme");
   else document.documentElement.setAttribute("data-theme", state.profile.theme);

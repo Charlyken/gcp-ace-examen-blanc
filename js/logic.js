@@ -33,7 +33,7 @@ export function drawExam() {
 }
 
 /* ---------------- Sessions ---------------- */
-// `kind` précise l'origine d'une session d'entraînement : "review" = révision du jour (srs.js), "lesson" = leçon courte (lesson.js), null = entraînement libre.
+// `kind` précise l'origine d'une session d'entraînement : "review" = révision du jour (srs.js), "lesson" = leçon courte (lesson.js), "placement" = test de niveau (onboarding.js), null = entraînement libre.
 export function newSession(mode, questions, domains, kind) {
   const order = {};
   questions.forEach(q => { order[q.id] = shuffle(q.options.map((_, i) => i)); });
@@ -46,8 +46,8 @@ export function newSession(mode, questions, domains, kind) {
   };
 }
 // Intitulé d'une session selon son origine (`free` = intitulé de l'entraînement libre).
-export const sessionTitle = (s, free = "Entraînement") => s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : s.kind === "lesson" ? "Leçon courte" : free;
-export const resumeLabel = s => s.mode === "exam" ? "Reprendre l'examen" : s.kind === "review" ? "Reprendre la révision" : s.kind === "lesson" ? "Reprendre la leçon" : "Reprendre l'entraînement";
+export const sessionTitle = (s, free = "Entraînement") => s.mode === "exam" ? "Examen blanc" : s.kind === "review" ? "Révision du jour" : s.kind === "lesson" ? "Leçon courte" : s.kind === "placement" ? "Test de niveau" : free;
+export const resumeLabel = s => s.mode === "exam" ? "Reprendre l'examen" : s.kind === "review" ? "Reprendre la révision" : s.kind === "lesson" ? "Reprendre la leçon" : s.kind === "placement" ? "Reprendre le test de niveau" : "Reprendre l'entraînement";
 
 // Une session sauvegardée est inutilisable si des questions ont été retirées de la banque.
 export function isSessionUsable(s) {
