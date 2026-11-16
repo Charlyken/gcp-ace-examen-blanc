@@ -128,6 +128,23 @@ Les tests couvrent la logique pure (`js/utils.js`, `js/logic.js`, `js/srs.js`, `
 
 Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique qui touche au DOM doit d'abord être extraite dans un module pur de `js/` pour rester testable.
 
+## Design tokens
+
+Toute valeur visuelle de `styles.css` vient du bloc `:root` en tête du fichier ; ne pas écrire de couleur, rayon, espacement ni taille de texte en dur dans un composant.
+
+| Famille | Tokens |
+|---|---|
+| Couleurs | `--color-*` en `light-dark(clair, sombre)` : une seule déclaration pour les deux thèmes (`--color-bg`, `--color-surface`, `--color-text`, `--color-primary`, `--color-success`, `--color-error`, `--color-warning`…) ; couleurs de domaine `--color-g-*` |
+| Rayons | `--radius-xs` (4 px) à `--radius-4xl` (32 px), `--radius-pill` |
+| Espacements | `--space-N` = N × 4 px (`--space-2` = 8 px) |
+| Textes | `--text-2xs` à `--text-5xl` ; polices `--font-display`, `--font-body`, `--font-mono` |
+| Élévation et focus | `--shadow-1`, `--shadow-2`, `--focus-outline`, `--focus-offset` |
+| Gabarits | `--tap-min` (44 px, cible tactile), `--container` (860 px) |
+
+Le thème sombre exige un navigateur récent (`light-dark()` : Chrome 123, Safari 17.5, Firefox 120).
+
+**Retour au clic** : un bouton qui lance ou reprend une session porte l'attribut `data-delay` ; `js/events.js` retarde alors l'action de 120 ms pour laisser voir l'onde (ignoré avec « réduire les animations »). Pour changer le libellé d'un bouton sans effacer son onde, utiliser `setLabel` (`js/views/home.js`) plutôt que `textContent`.
+
 ## Structure
 
 | Fichier | Rôle |
@@ -136,7 +153,7 @@ Un nouveau fichier `tests/*.test.js` est découvert automatiquement. Une logique
 | `manifest.webmanifest`, `icons/` | Manifeste de l'application et icônes (PNG, SVG, maskable, iOS) |
 | `sw.js` | Service worker : précache du shell, hors ligne, mise à jour sur demande |
 | `precache-manifest.js` | **Généré** (`npm run build:pwa`) : version du cache et fichiers précachés |
-| `styles.css` | Styles |
+| `styles.css` | Styles. Commence par les **design tokens** (voir ci-dessous) |
 | `questions.js` | Domaines (`DOMAINS`), sujets (`TOPICS`) et banque de questions (`QUESTIONS`), module ES |
 | `js/main.js` | Point d'entrée : branche les écouteurs et affiche la première vue |
 | `js/config.js` | Réglages (`CONFIG`), clés de stockage, `STORAGE_VERSION`, profil par défaut |
