@@ -7,7 +7,7 @@ import { reviewCard } from "../js/srs.js";
 import { seedRandom } from "./helpers.js";
 
 const TODAY = "2026-11-10";
-const Q = QUESTIONS;                                            // 64 questions, 5 domaines
+const Q = QUESTIONS;                                            // la banque réelle : les tests ne doivent pas dépendre de sa taille
 // Carte de révision sur mesure : `due` en jours par rapport à aujourd'hui, `ok` dernier résultat, `last` dernière réponse.
 const day = d => { const x = new Date(2026, 10, 10 + d, 12); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
 const card = (over = {}) => ({ n: 2, ok: true, ease: 2.5, interval: 6, reps: 2, due: day(5), last: day(-3), hist: [1, 1], ...over });
@@ -142,12 +142,13 @@ describe("pickLesson : « Encore une » apporte du neuf", () => {
   test("enchaîner des leçons : aucune question répétée tant qu'il reste du neuf", t => {
     seedRandom(t, 16);
     const stats = {}; const seen = new Set();
-    for (let i = 0; i < 6; i++) {                                                     // 6 leçons = 60 des 64 questions
+    const lessons = Math.floor(Q.length / 10);                                        // leçons complètes qu'on peut enchaîner sans rien répéter
+    for (let i = 0; i < lessons; i++) {
       const r = lesson(stats);
       assert.equal(r.ids.length, 10);
       for (const id of r.ids) { assert.ok(!seen.has(id), `${id} répétée à la leçon ${i + 1}`); seen.add(id); stats[id] = reviewCard(undefined, true, TODAY); }
     }
-    assert.equal(seen.size, 60);
+    assert.equal(seen.size, lessons * 10);
   });
   test("quand tout a été répondu aujourd'hui, la leçon reste possible (dernier recours)", t => {
     seedRandom(t, 17);
@@ -155,9 +156,9 @@ describe("pickLesson : « Encore une » apporte du neuf", () => {
     const r = lesson(stats);
     assert.equal(r.ids.length, 10); assert.equal(r.mix.today, 10);
   });
-  test("les 4 dernières questions complètent la 7e leçon avec du déjà répondu", t => {
+  test("les 4 dernières questions neuves complètent la leçon avec du déjà répondu", t => {
     seedRandom(t, 18);
-    const stats = {}; Q.slice(0, 60).forEach(q => stats[q.id] = card({ last: TODAY }));
+    const stats = {}; Q.slice(0, Q.length - 4).forEach(q => stats[q.id] = card({ last: TODAY }));
     const r = lesson(stats);
     assert.equal(r.mix.new, 4); assert.equal(r.mix.today, 6);
   });
