@@ -219,60 +219,89 @@ export const QUESTIONS = [
     explain: "Les stratégies d'autorisation s'héritent du haut vers le bas (organisation, dossiers, projets, ressources) et sont additives : l'accès effectif est l'union des stratégies de la ressource et de ses ancêtres. Un niveau inférieur ne peut donc pas restreindre ce qu'un parent accorde. L'héritage ne remonte jamais vers le parent, la stratégie enfant ne remplace pas celle du parent, et l'héritage va bien jusqu'aux ressources."
   },
   {
-    id: "d1-12", domain: 1,
-    topic: "gcloud", difficulty: 1,
-    doc: "https://docs.cloud.google.com/sdk/docs/configurations",
-    q: "Vous travaillez sur trois projets avec des comptes différents et vous en avez assez de répéter `--project` et `--account` à chaque commande. Que mettez-vous en place avec `gcloud` ?",
+    id: "d1-16", domain: 1,
+    topic: "gcloud", difficulty: 2,
+    doc: "https://docs.cloud.google.com/docs/authentication/provide-credentials-adc",
+    q: "Vous développez en local une application qui utilise une bibliothèque cliente Google Cloud. Elle doit s'authentifier avec votre identité, sans que vous téléchargiez de clé de compte de service. Quelle commande exécutez-vous ?",
     options: [
-      "Une configuration `gcloud` nommée par projet, activée avec `gcloud config configurations activate`",
-      "Un nouvel appel à `gcloud auth login` avant chaque changement de projet",
-      "Une installation distincte du SDK Google Cloud pour chaque projet, avec ses propres identifiants dans un dossier séparé",
-      "La commande `gcloud components update` pour changer de projet"
+      "`gcloud auth application-default login`, qui crée des identifiants locaux par défaut (ADC)",
+      "`gcloud auth login`, qui authentifie aussi tous les programmes lancés depuis votre session",
+      "`gcloud auth activate-service-account --key-file=cle.json` avec une clé téléchargée",
+      "`gcloud config set account` suivi de votre adresse e-mail professionnelle"
     ],
     correct: [0],
-    explain: "Les configurations `gcloud` regroupent un compte, un projet, une région et d'autres propriétés sous un nom ; `gcloud config configurations create` en crée une et `activate` bascule de l'une à l'autre en une commande. Se reconnecter à chaque fois est lent et ne mémorise pas le projet. Installer plusieurs SDK est inutile. `gcloud components update` met à jour les composants du SDK, elle ne change ni de compte ni de projet."
+    explain: "`gcloud auth application-default login` crée des identifiants locaux par défaut (ADC) que les bibliothèques clientes détectent automatiquement, sans clé à gérer. `gcloud auth login` n'authentifie que la CLI `gcloud` elle-même, pas vos programmes. `activate-service-account` suppose justement une clé téléchargée. `gcloud config set account` choisit le compte actif de la CLI mais n'obtient aucun identifiant pour le code."
   },
   {
-    id: "d1-13", domain: 1,
-    topic: "identity", difficulty: 2,
-    doc: "https://docs.cloud.google.com/iam/docs/principals-overview",
-    q: "Vous devez donner le rôle Lecteur à 40 membres d'une équipe sur un projet, et l'équipe voit régulièrement des arrivées et des départs. Comment éviter de modifier la stratégie IAM à chaque mouvement ?",
+    id: "d1-17", domain: 1,
+    topic: "resource-hierarchy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/resource-manager/docs/delete-restore-projects",
+    q: "Un projet qui hébergeait une application en production a été supprimé par erreur il y a cinq jours. Que pouvez-vous faire ?",
     options: [
-      "Accorder le rôle à un groupe qui contient l'équipe, puis gérer l'appartenance au groupe",
-      "Accorder le rôle à chaque membre individuellement et mettre à jour la liste à chaque mouvement",
-      "Créer un compte partagé dont tous les membres connaissent le mot de passe",
-      "Accorder le rôle à `allAuthenticatedUsers` pour que l'équipe y accède sans configuration"
+      "Le restaurer : un projet supprimé reste récupérable pendant 30 jours avant sa suppression définitive",
+      "Rien : la suppression d'un projet est immédiate et ses ressources sont perdues sans retour possible",
+      "Ouvrir un ticket de support : seul Google peut restaurer un projet supprimé, jamais son propriétaire",
+      "Recréer un projet du même nom : les ressources supprimées sont alors rattachées automatiquement"
     ],
     correct: [0],
-    explain: "Un groupe est un principal IAM : on lui accorde le rôle une fois, et les arrivées et départs se gèrent dans le groupe, sans toucher à la stratégie du projet. L'attribution individuelle oblige à modifier la stratégie à chaque mouvement. Un compte partagé supprime la traçabilité et pose un problème de sécurité. `allAuthenticatedUsers` désigne n'importe quel compte Google authentifié dans le monde, pas votre équipe."
+    explain: "Quand on supprime un projet, il passe en attente de suppression et peut être restauré (console ou `gcloud projects undelete`) pendant 30 jours ; ensuite il est supprimé définitivement avec ses ressources. La suppression n'est donc pas immédiate, la restauration ne passe pas obligatoirement par le support, et un nouveau projet du même nom ne récupère rien."
   },
   {
-    id: "d1-14", domain: 1,
+    id: "d1-18", domain: 1,
     topic: "billing", difficulty: 2,
-    doc: "https://docs.cloud.google.com/billing/docs/how-to/export-data-bigquery",
-    q: "La direction veut analyser en détail, avec des requêtes SQL, la répartition des coûts par projet et par service sur plusieurs mois. Que configurez-vous ?",
+    doc: "https://docs.cloud.google.com/resource-manager/docs/labels-overview",
+    q: "Trois équipes déploient leurs VM et leurs buckets dans un même projet. La direction veut ventiler la facture par équipe sans créer un projet par équipe. Que mettez-vous en place ?",
     options: [
-      "L'export des données de facturation Cloud vers un jeu de données BigQuery",
-      "Un budget avec des seuils d'alerte à 50 %, 90 % et 100 %",
-      "Un récepteur de journaux d'audit vers Cloud Storage",
-      "Les rapports de facturation de la console, enregistrés chaque mois"
+      "Des étiquettes (labels) du type `equipe=data` sur les ressources, exploitées dans la facturation",
+      "Un compte de facturation distinct pour chaque équipe, tous rattachés à ce même projet",
+      "Des quotas distincts pour chaque équipe sur l'API Compute Engine, définis dans le projet",
+      "Des règles de pare-feu distinctes pour chaque équipe, appliquées aux sous-réseaux du projet"
     ],
     correct: [0],
-    explain: "L'export de facturation vers BigQuery écrit les lignes de coûts détaillées dans une table que l'on interroge en SQL (par projet, service, étiquette, période). Un budget ne sert qu'à envoyer des alertes. Les journaux d'audit tracent des actions, pas des coûts. Les rapports de la console sont pratiques pour une vue d'ensemble mais ne permettent pas d'analyse SQL."
+    explain: "Les étiquettes sont des paires clé-valeur posées sur les ressources ; elles apparaissent dans les données de facturation, ce qui permet de regrouper les coûts par équipe au sein d'un même projet. Un projet n'est lié qu'à un seul compte de facturation à la fois. Les quotas et les règles de pare-feu n'ont aucun lien avec la ventilation des coûts."
   },
   {
-    id: "d1-15", domain: 1,
-    topic: "apis-quotas", difficulty: 1,
-    doc: "https://docs.cloud.google.com/service-usage/docs/enable-disable",
-    q: "Dans un projet tout juste créé, la commande `gcloud compute instances create` échoue avec le message « Compute Engine API has not been used in project … before or it is disabled ». Que faites-vous ?",
+    id: "d1-19", domain: 1,
+    topic: "iam", difficulty: 2,
+    doc: "https://docs.cloud.google.com/iam/docs/roles-overview",
+    q: "Quelles affirmations sur les rôles de base d'IAM (Propriétaire, Éditeur, Lecteur) sont exactes ?",
     options: [
-      "Activer l'API Compute Engine dans le projet, par exemple avec `gcloud services enable compute.googleapis.com`",
-      "Accorder le rôle Propriétaire à l'utilisateur sur le projet",
-      "Demander une augmentation du quota de processeurs",
-      "Créer un compte de service et le définir comme compte par défaut de `gcloud`"
+      "Ils regroupent des milliers de permissions sur de nombreux services : il vaut mieux les éviter en production",
+      "Le rôle Éditeur permet de modifier l'état des ressources du projet, pas seulement de les consulter",
+      "Ils sont limités à un seul service Google Cloud, par exemple Cloud Storage uniquement",
+      "Google les recommande pour appliquer le principe du moindre privilège dans les projets de production",
+      "Le rôle Lecteur permet aussi de modifier les ressources, mais pas de les supprimer"
+    ],
+    correct: [0, 1],
+    explain: "Les rôles de base sont très larges : ils couvrent la plupart des services, ce qui s'écarte du moindre privilège, d'où la recommandation d'utiliser des rôles prédéfinis ou personnalisés en production. Éditeur ajoute à Lecteur la possibilité de modifier les ressources. Ils ne sont pas limités à un service, ne sont pas recommandés pour le moindre privilège, et Lecteur est en lecture seule."
+  },
+  {
+    id: "d1-20", domain: 1,
+    topic: "org-policy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/organization-policy/domain-restricted-sharing",
+    q: "La sécurité veut empêcher que des rôles IAM soient accordés à des comptes extérieurs au domaine de l'entreprise, dans tous les projets de l'organisation. Que configurez-vous ?",
+    options: [
+      "La règle d'organisation de partage restreint au domaine (`iam.allowedPolicyMemberDomains`)",
+      "Un rôle personnalisé sans la permission `setIamPolicy`, attribué à tous les utilisateurs de l'entreprise",
+      "Une alerte envoyée aux administrateurs à chaque modification d'une stratégie IAM du projet concerné",
+      "Un budget par projet, restreint aux membres du domaine de l'entreprise par une règle de facturation"
     ],
     correct: [0],
-    explain: "Les API d'un service doivent être activées dans chaque projet avant d'être utilisées ; le message dit précisément que l'API est désactivée. `gcloud services enable` l'active. Un rôle plus large n'active pas l'API, et un quota ne s'applique qu'une fois l'API active. Un compte de service ne change rien à l'état de l'API."
+    explain: "La contrainte `iam.allowedPolicyMemberDomains` limite les principaux qui peuvent recevoir des rôles aux domaines autorisés, dans toute l'organisation. Retirer `setIamPolicy` limiterait qui modifie les stratégies, pas qui peut recevoir un rôle. Une alerte réagit après coup sans rien empêcher. Un budget ne contrôle pas les accès."
+  },
+  {
+    id: "d1-21", domain: 1,
+    topic: "gcloud", difficulty: 1,
+    doc: "https://docs.cloud.google.com/shell/docs/how-cloud-shell-works",
+    q: "Vous écrivez des scripts dans Cloud Shell. Où devez-vous les enregistrer pour les retrouver à la prochaine ouverture d'une session ?",
+    options: [
+      "Dans votre répertoire personnel (`$HOME`), qui repose sur un disque persistant de 5 Go",
+      "N'importe où sur le disque de la machine virtuelle, qui est conservé d'une session à l'autre",
+      "Dans `/tmp`, dont le contenu est sauvegardé automatiquement dans un bucket Cloud Storage",
+      "Dans un dossier du projet, qui est copié automatiquement dans Cloud Shell à chaque ouverture"
+    ],
+    correct: [0],
+    explain: "Seul le répertoire personnel de Cloud Shell est persistant (5 Go) ; la machine virtuelle sous-jacente est éphémère, donc ce qui se trouve en dehors de `$HOME` (y compris `/tmp` et les logiciels installés ailleurs) disparaît à la fin de la session. Aucun bucket ni dossier de projet n'est synchronisé automatiquement."
   },
 
   /* ------------------------------------------------------------------
@@ -420,34 +449,6 @@ export const QUESTIONS = [
     explain: "En Autopilot, Google provisionne et exploite les nœuds, et vous payez par défaut les ressources (CPU, mémoire, stockage éphémère) demandées par vos pods. La création et le dimensionnement des pools de nœuds caractérisent le mode Standard. Les clusters Autopilot sont régionaux, donc répartis sur plusieurs zones. `kubectl` et l'API Kubernetes s'utilisent normalement dans les deux modes."
   },
   {
-    id: "d2-12", domain: 2,
-    topic: "storage", difficulty: 1,
-    doc: "https://docs.cloud.google.com/storage/docs/storage-classes",
-    q: "Des journaux de conformité ne sont consultés qu'une fois par an, au mieux, et doivent être conservés sept ans au coût le plus bas. Quelle classe de stockage Cloud Storage choisissez-vous ?",
-    options: [
-      "Archive",
-      "Standard",
-      "Nearline",
-      "Coldline"
-    ],
-    correct: [0],
-    explain: "Archive est la classe la moins chère au Go stocké, conçue pour un accès moins d'une fois par an ; Coldline vise un accès environ trimestriel, Nearline environ mensuel, et Standard les données fréquemment consultées. Les classes plus chaudes coûteraient plus cher pour des données presque jamais lues."
-  },
-  {
-    id: "d2-13", domain: 2,
-    topic: "databases", difficulty: 2,
-    doc: "https://docs.cloud.google.com/sql/docs/mysql/high-availability",
-    q: "Une application critique utilise Cloud SQL pour MySQL. La base doit survivre à la panne d'une zone avec un basculement automatique. Que configurez-vous ?",
-    options: [
-      "La haute disponibilité de l'instance (configuration régionale avec une instance de secours dans une autre zone)",
-      "Un réplica en lecture créé dans la même zone que l'instance principale, à promouvoir manuellement si celle-ci tombe en panne",
-      "Des sauvegardes automatiques quotidiennes",
-      "Un type de machine plus puissant pour l'instance"
-    ],
-    correct: [0],
-    explain: "La configuration haute disponibilité de Cloud SQL maintient une instance de secours synchrone dans une autre zone de la région et bascule automatiquement en cas de panne de la zone principale. Un réplica en lecture dans la même zone tombe avec elle, et sa promotion est manuelle. Les sauvegardes permettent une restauration, pas un basculement. Une machine plus puissante ne protège pas d'une panne de zone."
-  },
-  {
     id: "d2-14", domain: 2,
     topic: "networking", difficulty: 3,
     doc: "https://docs.cloud.google.com/vpc/docs/shared-vpc",
@@ -462,18 +463,88 @@ export const QUESTIONS = [
     explain: "Le VPC partagé permet à un projet hôte de posséder le réseau, les sous-réseaux et les règles de pare-feu, tandis que les projets de service y créent leurs ressources : l'administration du réseau est centralisée. L'appairage relie des réseaux qui restent gérés séparément et il n'est pas transitif, donc il faudrait un appairage par paire. Copier les règles à la main multiplie les écarts. Des tunnels VPN entre projets ajoutent de la complexité pour un besoin interne."
   },
   {
-    id: "d2-15", domain: 2,
-    topic: "compute", difficulty: 2,
-    doc: "https://docs.cloud.google.com/compute/docs/instances/spot",
-    q: "Un traitement par lots nocturne est tolérant aux interruptions et doit coûter le moins possible. Quelles affirmations sur les VM Spot sont exactes ?",
+    id: "d2-16", domain: 2,
+    topic: "databases", difficulty: 1,
+    doc: "https://docs.cloud.google.com/firestore/native/docs/overview",
+    q: "Une application mobile et web stocke des profils et des préférences d'utilisateurs sous forme de documents JSON. Vous ne voulez provisionner ni dimensionner aucun serveur. Quelle base choisissez-vous ?",
     options: [
-      "Compute Engine peut les arrêter ou les supprimer à tout moment pour récupérer la capacité",
-      "Elles sont proposées à un tarif fortement réduit par rapport aux VM à la demande",
-      "Elles ont une durée d'exécution maximale de 24 heures",
-      "Elles ne sont disponibles qu'avec un engagement d'utilisation d'un an ou de trois ans"
+      "Firestore",
+      "Cloud SQL pour PostgreSQL",
+      "Cloud Bigtable",
+      "Cloud Spanner"
     ],
-    correct: [0, 1],
-    explain: "Les VM Spot utilisent la capacité excédentaire de Compute Engine : leur prix est très inférieur à celui des VM à la demande, mais Compute Engine peut les arrêter ou les supprimer à tout moment pour récupérer cette capacité. Elles n'ont ni durée minimale ni durée maximale d'exécution (sauf limite que vous fixez vous-même) et ne demandent aucun engagement. Elles conviennent donc aux traitements tolérants aux interruptions, comme ce traitement nocturne."
+    correct: [0],
+    explain: "Firestore est une base de documents NoSQL entièrement gérée et sans serveur : pas de provisionnement, mise à l'échelle automatique, facturation à l'usage, et intégration possible avec Firebase pour les applications mobiles et web. Cloud SQL et Spanner sont des bases relationnelles, et Bigtable est une base à colonnes pour de très gros volumes, pas une base de documents."
+  },
+  {
+    id: "d2-17", domain: 2,
+    topic: "databases", difficulty: 1,
+    doc: "https://docs.cloud.google.com/memorystore/docs/redis/memorystore-for-redis-overview",
+    q: "Une application web interroge sans cesse les mêmes données de référence dans Cloud SQL, ce qui ralentit ses pages. Vous voulez un cache en mémoire géré pour réduire la latence. Quel service utilisez-vous ?",
+    options: [
+      "Memorystore, un service géré de cache en mémoire",
+      "Cloud Storage de classe Standard",
+      "Cloud Bigtable avec un nœud supplémentaire",
+      "Un disque persistant SSD plus rapide pour la base"
+    ],
+    correct: [0],
+    explain: "Memorystore (par exemple Memorystore for Redis) est un service géré de cache en mémoire, avec des accès de l'ordre de la milliseconde ou moins, qui décharge la base des lectures répétées. Cloud Storage est un stockage d'objets, Bigtable une base NoSQL, et un disque plus rapide accélère la base sans servir de cache en mémoire."
+  },
+  {
+    id: "d2-18", domain: 2,
+    topic: "networking", difficulty: 2,
+    doc: "https://docs.cloud.google.com/nat/docs/overview",
+    q: "Des VM sans adresse IP externe doivent télécharger des mises à jour sur Internet, sans qu'Internet puisse initier de connexion vers elles. Que configurez-vous ?",
+    options: [
+      "Cloud NAT, configuré sur un routeur Cloud pour les sous-réseaux des VM",
+      "Une adresse IP externe éphémère attribuée à chaque VM",
+      "Un équilibreur de charge d'application externe placé devant les VM",
+      "Un appairage de réseaux VPC avec un second VPC public"
+    ],
+    correct: [0],
+    explain: "Cloud NAT permet aux VM sans adresse externe d'ouvrir des connexions sortantes vers Internet ; seules les réponses aux connexions établies reviennent, Internet ne peut pas en initier. Une adresse externe sur chaque VM les exposerait. Un équilibreur sert à recevoir du trafic entrant, et un appairage relie deux VPC sans donner accès à Internet."
+  },
+  {
+    id: "d2-19", domain: 2,
+    topic: "networking", difficulty: 2,
+    doc: "https://docs.cloud.google.com/network-connectivity/docs/vpn/concepts/overview",
+    q: "Vous devez relier votre centre de données à votre VPC en quelques jours, avec un trafic chiffré passant par Internet, sans investir dans une liaison physique dédiée. Quelle solution choisissez-vous ?",
+    options: [
+      "Cloud VPN (VPN haute disponibilité), avec des tunnels IPsec chiffrés sur Internet",
+      "Dedicated Interconnect, avec un raccordement physique à un point de présence Google",
+      "Partner Interconnect, avec une liaison fournie par un opérateur partenaire",
+      "Un appairage de réseaux VPC entre votre centre de données et le VPC"
+    ],
+    correct: [0],
+    explain: "Cloud VPN établit des tunnels IPsec chiffrés à travers Internet, ce qui se met en place rapidement et sans matériel dédié. Dedicated et Partner Interconnect passent par des liaisons physiques privées, plus longues à installer et non chiffrées par défaut. L'appairage de réseaux VPC relie deux VPC Google Cloud, pas un site externe."
+  },
+  {
+    id: "d2-20", domain: 2,
+    topic: "storage", difficulty: 1,
+    doc: "https://docs.cloud.google.com/filestore/docs/overview",
+    q: "Plusieurs VM Linux doivent lire et écrire les mêmes fichiers via un système de fichiers partagé de type NFS, avec une faible latence. Quel service géré choisissez-vous ?",
+    options: [
+      "Filestore",
+      "Memorystore",
+      "Cloud Bigtable",
+      "Cloud SQL"
+    ],
+    correct: [0],
+    explain: "Filestore fournit des partages de fichiers NFS gérés, montables simultanément par plusieurs VM. Memorystore est un cache en mémoire, Bigtable une base NoSQL et Cloud SQL une base relationnelle : aucun n'expose un système de fichiers partagé."
+  },
+  {
+    id: "d2-21", domain: 2,
+    topic: "compute", difficulty: 3,
+    doc: "https://docs.cloud.google.com/compute/docs/nodes/sole-tenant-nodes",
+    q: "Une licence logicielle impose que vos VM s'exécutent sur du matériel physique réservé à votre organisation, sans partage avec d'autres clients. Que choisissez-vous dans Compute Engine ?",
+    options: [
+      "Des nœuds à locataire unique (sole-tenant), qui sont des serveurs physiques dédiés à vos VM",
+      "Des VM Spot, qui utilisent la capacité excédentaire du centre de données de la région",
+      "Des VM réparties dans un groupe d'instances géré régional sur plusieurs zones de disponibilité",
+      "Une remise sur engagement d'utilisation de trois ans sur les processeurs virtuels et la mémoire"
+    ],
+    correct: [0],
+    explain: "Les nœuds à locataire unique sont des serveurs physiques réservés à votre projet : vos VM n'y cohabitent pas avec celles d'autres clients, ce qui répond aux exigences de licence ou de conformité. Les VM Spot, les groupes régionaux et les remises sur engagement concernent le coût ou la disponibilité, pas l'isolation matérielle."
   },
 
   /* ------------------------------------------------------------------
@@ -706,20 +777,6 @@ export const QUESTIONS = [
     explain: "`kubectl autoscale` crée un HorizontalPodAutoscaler qui ajuste le nombre de pods entre les bornes selon la métrique cible. `kubectl scale` fixe un nombre de pods une fois pour toutes. `clusters resize` change le nombre de nœuds, pas le nombre de pods. `rollout restart` redémarre les pods sans modifier leur nombre."
   },
   {
-    id: "d3-17", domain: 3,
-    topic: "serverless", difficulty: 2,
-    doc: "https://docs.cloud.google.com/run/docs/rollouts-rollbacks-traffic-migration",
-    q: "Vous venez de déployer une nouvelle révision d'un service Cloud Run. Vous voulez lui envoyer 10 % du trafic pour la valider avant de basculer tout le trafic. Comment procédez-vous ?",
-    options: [
-      "Répartir le trafic entre les révisions, par exemple avec `gcloud run services update-traffic` et l'option `--to-revisions`",
-      "Créer un second service Cloud Run pour la nouvelle version, puis placer un équilibreur de charge qui répartit les requêtes entre les deux services",
-      "Supprimer l'ancienne révision pour que la nouvelle reçoive tout le trafic",
-      "Déployer la nouvelle version dans un autre projet et changer l'adresse DNS"
-    ],
-    correct: [0],
-    explain: "Cloud Run permet de répartir le trafic d'un même service entre plusieurs révisions selon des pourcentages, ce qui sert au déploiement progressif et au retour arrière immédiat. Un second service avec un équilibreur et un changement de DNS compliquent inutilement la mise en œuvre. Supprimer l'ancienne révision envoie 100 % du trafic à la nouvelle, sans validation progressive."
-  },
-  {
     id: "d3-18", domain: 3,
     topic: "compute", difficulty: 2,
     doc: "https://docs.cloud.google.com/compute/docs/instance-groups/autohealing-instances-in-migs",
@@ -788,6 +845,118 @@ export const QUESTIONS = [
     ],
     correct: [0],
     explain: "Un backend distant dans Cloud Storage partage l'état entre les membres et le verrouille pendant `plan` et `apply`, ce qui évite les exécutions concurrentes. Le dépôt Git ne verrouille rien, provoque des conflits et expose des valeurs sensibles contenues dans l'état. Un état local ou envoyé par e-mail se désynchronise vite et n'est pas protégé."
+  },
+  {
+    id: "d3-23", domain: 3,
+    topic: "compute", difficulty: 1,
+    doc: "https://docs.cloud.google.com/compute/docs/ip-addresses/configure-static-external-ip-address",
+    q: "L'adresse IP externe d'une VM change à chaque arrêt puis redémarrage, alors qu'un enregistrement DNS pointe dessus. Que faites-vous ?",
+    options: [
+      "Réserver une adresse IP externe statique et l'attribuer à la VM",
+      "Modifier à la main l'enregistrement DNS après chaque redémarrage de la VM",
+      "Remplacer son adresse externe par une adresse IP interne dans le même sous-réseau",
+      "Passer la VM à un type de machine plus grand pour stabiliser son adressage réseau"
+    ],
+    correct: [0],
+    explain: "Une adresse externe éphémère est libérée quand la VM s'arrête ; une adresse statique réservée reste attachée au projet et peut être attribuée à la VM, ce qui stabilise l'enregistrement DNS. Corriger le DNS à la main est fragile. Une adresse interne n'est pas joignable depuis Internet, et la taille de la machine n'a aucun effet sur son adresse."
+  },
+  {
+    id: "d3-24", domain: 3,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/images/create-custom",
+    q: "Chaque VM d'une flotte installe 3 Go de logiciels à son démarrage, ce qui est lent. Vous voulez démarrer plus vite avec des VM toutes identiques. Que faites-vous ?",
+    options: [
+      "Créer une image personnalisée qui contient déjà les logiciels, puis créer les VM à partir d'elle",
+      "Augmenter la taille du disque de démarrage de chaque VM pour accélérer les installations",
+      "Remplacer le script de démarrage par un second script qui lance les installations en parallèle",
+      "Utiliser des VM Spot, dont le démarrage est plus rapide que celui des VM standard"
+    ],
+    correct: [0],
+    explain: "Une image personnalisée fige le système et les logiciels déjà installés : les VM créées à partir d'elle démarrent prêtes, et toutes sont identiques. Un disque plus grand n'accélère pas l'installation, un script parallèle reste long, et le type de provisionnement (Spot) n'a pas d'effet sur la durée des installations."
+  },
+  {
+    id: "d3-25", domain: 3,
+    topic: "serverless", difficulty: 2,
+    doc: "https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule",
+    q: "Un traitement de nettoyage de données doit s'exécuter chaque nuit, aller jusqu'à son terme puis s'arrêter, sans écouter de requêtes HTTP. Quelle solution est adaptée ?",
+    options: [
+      "Un job Cloud Run, déclenché chaque nuit par Cloud Scheduler et arrêté à la fin",
+      "Un service Cloud Run configuré avec au moins une instance active en permanence",
+      "Un cluster GKE Standard dimensionné pour absorber le pic d'activité de la nuit",
+      "Une VM Compute Engine standard allumée en continu avec une tâche planifiée"
+    ],
+    correct: [0],
+    explain: "Un job Cloud Run exécute un conteneur jusqu'à sa fin sans serveur HTTP, et Cloud Scheduler peut le déclencher selon un calendrier : vous ne payez que pendant l'exécution. Un service Cloud Run attend des requêtes, un cluster GKE ou une VM allumés en continu coûtent même quand rien ne tourne."
+  },
+  {
+    id: "d3-26", domain: 3,
+    topic: "gke", difficulty: 3,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/network-isolation",
+    q: "La politique de sécurité interdit que les nœuds d'un cluster GKE aient une adresse IP publique. Quelle configuration appliquez-vous à la création du cluster ?",
+    options: [
+      "Un cluster privé, dont les nœuds n'ont que des adresses IP internes",
+      "Un pare-feu qui refuse tout le trafic entrant sur les nœuds du cluster",
+      "Un cluster zonal plutôt qu'un cluster régional, pour limiter les adresses utilisées",
+      "Un pool de nœuds qui s'appuie uniquement sur des VM Spot, sans adresse stable"
+    ],
+    correct: [0],
+    explain: "Dans un cluster privé, les nœuds n'ont que des adresses IP internes (leur accès sortant à Internet passe par Cloud NAT si nécessaire). Un pare-feu bloque du trafic mais n'enlève pas l'adresse publique. Zonal ou régional, et Spot ou non, ne changent rien au fait que les nœuds aient ou non une adresse publique."
+  },
+  {
+    id: "d3-27", domain: 3,
+    topic: "gke", difficulty: 1,
+    doc: "https://docs.cloud.google.com/artifact-registry/docs/overview",
+    q: "Votre équipe construit des images de conteneurs qu'elle veut stocker de façon privée dans Google Cloud, avant de les déployer sur GKE. Quel service utilisez-vous ?",
+    options: [
+      "Artifact Registry",
+      "Un bucket Cloud Storage en accès public",
+      "Secret Manager",
+      "Cloud Source Repositories"
+    ],
+    correct: [0],
+    explain: "Artifact Registry est le service géré de Google Cloud pour stocker des images de conteneurs et d'autres artefacts (paquets), avec des droits IAM par dépôt. Un bucket public exposerait les images, Secret Manager stocke des secrets et non des images, et un dépôt de code source ne sert pas à héberger des images de conteneurs."
+  },
+  {
+    id: "d3-28", domain: 3,
+    topic: "messaging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/pubsub/docs/push",
+    q: "Un abonnement Pub/Sub doit livrer chaque message en l'envoyant directement à un point de terminaison HTTPS de votre application, sans que celle-ci ait à interroger Pub/Sub. Quel type d'abonnement choisissez-vous ?",
+    options: [
+      "Un abonnement push, livré à votre URL",
+      "Un abonnement pull",
+      "Un abonnement avec écriture dans BigQuery",
+      "Un abonnement avec un sujet de lettres mortes"
+    ],
+    correct: [0],
+    explain: "Avec un abonnement push, Pub/Sub envoie chaque message à une URL HTTPS que vous indiquez ; avec un abonnement pull, c'est l'application qui interroge Pub/Sub. L'écriture dans BigQuery stocke les messages dans une table, et un sujet de lettres mortes recueille les messages qui échouent, sans définir le mode de livraison."
+  },
+  {
+    id: "d3-29", domain: 3,
+    topic: "networking", difficulty: 2,
+    doc: "https://docs.cloud.google.com/firewall/docs/firewalls",
+    q: "Vous voulez autoriser le trafic SSH (TCP 22) uniquement vers les VM d'administration d'un VPC, et pas vers les autres VM. Comment limitez-vous la règle de pare-feu à ces VM ?",
+    options: [
+      "Cibler la règle avec une balise réseau (ou un compte de service) portée uniquement par ces VM",
+      "Configurer le pare-feu du système d'exploitation de chaque VM, sans règle de pare-feu VPC",
+      "Appliquer la règle à tout le VPC, puis désactiver SSH à la main dans les autres VM",
+      "Placer les VM d'administration dans un projet distinct pour qu'elles ne soient plus filtrées"
+    ],
+    correct: [0],
+    explain: "Une règle de pare-feu VPC peut cibler toutes les instances, des instances portant une balise réseau ou des instances utilisant un compte de service précis : seules les VM concernées reçoivent l'autorisation. Se passer des règles VPC pour gérer chaque VM à la main est fragile, ouvrir à tout le VPC expose toutes les VM, et changer de projet ne règle pas le filtrage."
+  },
+  {
+    id: "d3-30", domain: 3,
+    topic: "iac", difficulty: 2,
+    doc: "https://docs.cloud.google.com/build/docs/triggers",
+    q: "À chaque envoi (push) sur la branche principale d'un dépôt, vous voulez construire automatiquement l'image du conteneur puis la déployer sur Cloud Run. Quel service orchestre ce traitement ?",
+    options: [
+      "Cloud Build, avec un déclencheur lié à la branche du dépôt",
+      "Cloud Scheduler, avec une tâche lancée toutes les minutes",
+      "Pub/Sub, avec un abonnement pull consulté par un script",
+      "Cloud Logging, avec un récepteur vers un bucket Cloud Storage"
+    ],
+    correct: [0],
+    explain: "Cloud Build exécute des étapes de construction et de déploiement décrites dans un fichier de configuration, et un déclencheur le lance automatiquement à chaque push. Cloud Scheduler lance des tâches à heure fixe sans lien avec le dépôt, Pub/Sub transporte des messages, et un récepteur de journaux exporte des logs : aucun ne construit ni ne déploie."
   },
 
   /* ------------------------------------------------------------------
@@ -1001,18 +1170,88 @@ export const QUESTIONS = [
     explain: "Un contrôle de disponibilité interroge périodiquement le service depuis plusieurs régions, et une règle d'alerte envoie une notification (e-mail, par exemple) quand il échoue. Un récepteur de journaux exporte des données sans alerter. Une alerte de budget concerne les coûts. Cloud Trace sert à analyser la latence des requêtes."
   },
   {
-    id: "d4-16", domain: 4,
-    topic: "monitoring", difficulty: 2,
-    doc: "https://docs.cloud.google.com/monitoring/agent/ops-agent",
-    q: "Dans Cloud Monitoring, vous voyez l'utilisation du processeur de vos VM mais pas la mémoire utilisée. Que faites-vous pour obtenir ces métriques ?",
+    id: "d4-17", domain: 4,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/setting-vm-host-options",
+    q: "Google doit effectuer une maintenance sur le serveur physique qui héberge une VM Compute Engine standard. Que se passe-t-il par défaut pour cette VM ?",
     options: [
-      "Installer l'agent Ops sur les VM",
-      "Activer Cloud Trace dans le projet",
-      "Accorder le rôle Lecteur de Monitoring aux utilisateurs",
-      "Passer les VM à un type de machine plus grand"
+      "Elle est migrée à chaud vers un autre hôte, sans redémarrage",
+      "Elle est arrêtée puis redémarrée automatiquement sur un nouvel hôte",
+      "Elle est supprimée et vous devez la recréer à partir d'un instantané",
+      "Elle reste sur place et la maintenance attend votre prochaine mise à jour"
     ],
     correct: [0],
-    explain: "Les métriques visibles par l'hyperviseur, comme le processeur, sont collectées sans agent, mais la mémoire et l'espace disque se mesurent dans le système d'exploitation : il faut l'agent Ops, qui collecte aussi les journaux. Cloud Trace analyse la latence des requêtes. Le rôle Lecteur règle des droits, pas la collecte. Un type de machine plus grand ne change pas les métriques disponibles."
+    explain: "Par défaut, Compute Engine migre à chaud la VM vers un autre hôte pendant la maintenance (propriété `onHostMaintenance` à `MIGRATE`), sans redémarrage. Seules les VM Spot et préemptibles, ou celles qui ne prennent pas en charge la migration (par exemple avec des GPU), sont arrêtées pendant la maintenance. Une VM n'est pas supprimée, et la maintenance de l'hôte n'attend pas votre accord."
+  },
+  {
+    id: "d4-18", domain: 4,
+    topic: "disks", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/disks/resize-persistent-disk",
+    q: "Le disque persistant d'une VM de production est plein à 95 %. Vous voulez augmenter sa capacité en limitant l'interruption. Que faites-vous ?",
+    options: [
+      "Augmenter la taille du disque, puis étendre la partition et le système de fichiers dans la VM",
+      "Arrêter la VM et supprimer le disque, car un disque persistant ne peut jamais être agrandi",
+      "Créer un second disque que Compute Engine fusionne automatiquement avec le premier",
+      "Réduire d'abord la taille du disque, puis la réaugmenter pour libérer de l'espace utilisable"
+    ],
+    correct: [0],
+    explain: "La taille d'un disque persistant peut être augmentée, y compris lorsqu'il est attaché à une VM en marche ; il faut ensuite étendre la partition et le système de fichiers pour utiliser l'espace ajouté. Un disque ne peut pas être réduit, et Compute Engine ne fusionne pas automatiquement plusieurs disques."
+  },
+  {
+    id: "d4-19", domain: 4,
+    topic: "storage", difficulty: 3,
+    doc: "https://docs.cloud.google.com/storage/docs/bucket-lock",
+    q: "Une réglementation impose que les objets d'un bucket ne puissent être ni modifiés ni supprimés pendant un an, même par un administrateur. Que configurez-vous ?",
+    options: [
+      "Une politique de rétention d'un an sur le bucket, puis son verrouillage (Bucket Lock)",
+      "La gestion des versions d'objets sur le bucket, avec conservation des anciennes versions",
+      "Une règle de cycle de vie qui archive les objets au bout d'un an dans une classe moins chère",
+      "Un rôle IAM en lecture seule attribué à tous les administrateurs du projet concernés"
+    ],
+    correct: [0],
+    explain: "Une politique de rétention empêche de supprimer ou de remplacer un objet avant la fin de la durée fixée ; une fois verrouillée (Bucket Lock), elle ne peut plus être réduite ni supprimée, même par un administrateur. Les versions conservent d'anciennes copies sans empêcher la suppression, le cycle de vie change la classe de stockage, et un rôle IAM peut toujours être modifié par un administrateur."
+  },
+  {
+    id: "d4-20", domain: 4,
+    topic: "monitoring", difficulty: 3,
+    doc: "https://docs.cloud.google.com/monitoring/settings/multiple-projects",
+    q: "Votre organisation compte douze projets. Vous voulez consulter les métriques et les tableaux de bord de tous ces projets depuis une seule vue Cloud Monitoring. Que configurez-vous ?",
+    options: [
+      "Une étendue de métriques (metrics scope) qui regroupe les projets autour d'un projet central",
+      "Un compte de service avec le rôle Lecteur dans chacun des douze projets, utilisé par un script",
+      "Une exportation hebdomadaire des métriques de chaque projet vers un fichier au format CSV",
+      "Un VPC partagé qui relie les douze projets au même réseau de supervision"
+    ],
+    correct: [0],
+    explain: "Une étendue de métriques définit quels projets un projet central peut surveiller : ses tableaux de bord et alertes affichent alors les données des projets ajoutés. Un script avec un compte de service ou des exports CSV ne donnent pas une vue Cloud Monitoring unifiée, et un VPC partagé concerne le réseau, pas la supervision."
+  },
+  {
+    id: "d4-21", domain: 4,
+    topic: "logging", difficulty: 2,
+    doc: "https://docs.cloud.google.com/logging/docs/logs-based-metrics",
+    q: "Vous voulez être alerté quand l'application consigne plus de 50 erreurs « payment failed » par minute dans ses journaux. Que mettez-vous en place ?",
+    options: [
+      "Une métrique basée sur les journaux, puis une règle d'alerte sur cette métrique",
+      "Un contrôle de disponibilité sur la page d'accueil du site public",
+      "Un récepteur de journaux qui exporte toutes les entrées vers Cloud Storage",
+      "Une alerte de budget de facturation envoyée aux administrateurs du projet"
+    ],
+    correct: [0],
+    explain: "Une métrique basée sur les journaux compte les entrées qui correspondent à un filtre (ici le message d'erreur) ; Cloud Monitoring peut alors déclencher une alerte quand le taux dépasse un seuil. Un contrôle de disponibilité teste l'accès au site, un récepteur vers Cloud Storage archive sans alerter, et un budget concerne les coûts."
+  },
+  {
+    id: "d4-22", domain: 4,
+    topic: "gke", difficulty: 2,
+    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/maintenance-windows-and-exclusions",
+    q: "Les mises à jour automatiques de votre cluster GKE ont lieu en pleine journée de travail. Vous voulez qu'elles se déroulent la nuit, hors des périodes critiques. Que configurez-vous ?",
+    options: [
+      "Une fenêtre de maintenance sur le cluster, avec d'éventuelles périodes d'exclusion",
+      "Un quota de processeurs plus bas pour le projet pendant les heures ouvrées de l'équipe",
+      "Un autoscaler de cluster avec un nombre minimal de nœuds plus élevé pendant la journée",
+      "Une règle de pare-feu qui bloque le trafic de mise à jour pendant les heures de travail"
+    ],
+    correct: [0],
+    explain: "Une fenêtre de maintenance indique quand GKE peut effectuer les mises à jour automatiques, et les exclusions de maintenance permettent d'éviter des périodes sensibles. Un quota, l'autoscaler ou un pare-feu n'influencent pas le moment des mises à jour du plan de contrôle et des nœuds."
   },
 
   /* ------------------------------------------------------------------
@@ -1203,45 +1442,87 @@ export const QUESTIONS = [
     explain: "Une règle d'organisation s'impose à toutes les ressources situées en dessous, quels que soient les rôles IAM des utilisateurs : même un propriétaire de projet ne peut plus créer de clé. Retirer un rôle ne suffit pas, car d'autres rôles (Propriétaire, Éditeur, Administrateur de clés) contiennent la même autorisation. Une alerte ou un script de nettoyage agissent après coup et laissent une fenêtre d'exposition."
   },
   {
-    id: "d5-14", domain: 5,
-    topic: "service-accounts", difficulty: 3,
-    doc: "https://docs.cloud.google.com/kubernetes-engine/docs/concepts/workload-identity",
-    q: "Des pods GKE doivent lire un bucket Cloud Storage avec des droits précis, sans qu'aucune clé de compte de service ne soit téléchargée ni stockée. Que mettez-vous en place ?",
-    options: [
-      "La fédération d'identité de charge de travail pour GKE, qui relie l'identité Kubernetes du pod à des droits IAM",
-      "Une clé JSON de compte de service stockée dans un Secret Kubernetes",
-      "Le rôle de lecture accordé au compte de service par défaut des nœuds, que partagent alors tous les pods exécutés sur ces nœuds",
-      "Une clé de compte de service intégrée dans l'image du conteneur"
-    ],
-    correct: [0],
-    explain: "La fédération d'identité de charge de travail (Workload Identity) permet à un pod de s'authentifier avec son identité Kubernetes et d'obtenir des droits IAM précis, sans clé longue durée à stocker ni à renouveler. Une clé dans un Secret ou dans l'image reste un secret durable qui peut fuiter. Le compte de service des nœuds est partagé par tous les pods du nœud, ce qui viole le moindre privilège."
-  },
-  {
-    id: "d5-15", domain: 5,
-    topic: "secrets", difficulty: 1,
-    doc: "https://docs.cloud.google.com/secret-manager/docs/access-control",
-    q: "Une application Cloud Run doit lire un mot de passe de base de données. Où le stocker, et quel rôle accorder au compte de service de l'application ?",
-    options: [
-      "Dans Secret Manager, avec le rôle Accesseur de secrets sur ce secret",
-      "Dans une variable d'environnement en clair, versionnée dans le dépôt",
-      "Dans un bucket Cloud Storage public",
-      "Dans Secret Manager, avec le rôle Propriétaire sur le projet"
-    ],
-    correct: [0],
-    explain: "Secret Manager stocke les secrets de façon chiffrée, avec versions et journal d'accès ; le rôle Accesseur de secrets donne uniquement la lecture de la valeur, ce qui respecte le moindre privilège. Un mot de passe versionné dans le dépôt ou dans un bucket public est exposé. Le rôle Propriétaire accorderait bien plus que nécessaire."
-  },
-  {
-    id: "d5-16", domain: 5,
+    id: "d5-17", domain: 5,
     topic: "iam", difficulty: 2,
-    doc: "https://docs.cloud.google.com/iam/docs/conditions-overview",
-    q: "Un consultant doit avoir un rôle de lecture sur un projet jusqu'au 31 janvier, sans que personne ait à penser à le retirer. Que faites-vous ?",
+    doc: "https://docs.cloud.google.com/policy-intelligence/docs/troubleshoot-access",
+    q: "Une développeuse reçoit une erreur « permission denied » alors que vous pensez lui avoir accordé le bon rôle. Quel outil vous indique précisément pourquoi l'accès est accordé ou refusé ?",
     options: [
-      "Accorder le rôle avec une condition IAM basée sur la date et l'heure de la requête",
-      "Accorder le rôle normalement et créer un rappel dans un calendrier pour penser à le retirer à la date prévue",
-      "Accorder le rôle Propriétaire du projet pour une durée courte",
-      "Lui donner l'accès au moyen d'un compte de service partagé"
+      "L'outil de dépannage des stratégies IAM (Policy Troubleshooter)",
+      "Cloud Trace, qui retrace la latence des requêtes entre les services",
+      "L'export de la facturation vers BigQuery, qui détaille les coûts par service",
+      "Le simulateur de coût Google Cloud, qui estime les dépenses mensuelles"
     ],
     correct: [0],
-    explain: "Les conditions IAM limitent l'effet d'une attribution de rôle selon des attributs, dont la date et l'heure de la requête : après la date, l'accès cesse tout seul. Un rappel dépend de la mémoire de quelqu'un. Le rôle Propriétaire est bien trop large. Un compte de service partagé supprime la traçabilité."
+    explain: "Policy Troubleshooter prend un principal, une ressource et une permission, puis indique si l'accès est autorisé et quelles stratégies (ou conditions) en sont la cause. Cloud Trace analyse la latence, l'export de facturation et le simulateur de coût concernent les dépenses : aucun n'explique une décision d'accès."
+  },
+  {
+    id: "d5-18", domain: 5,
+    topic: "iam", difficulty: 3,
+    doc: "https://docs.cloud.google.com/policy-intelligence/docs/role-recommendations-overview",
+    q: "Vous voulez repérer les rôles IAM accordés en trop, c'est-à-dire les permissions que personne n'utilise, pour appliquer le moindre privilège. Quel outil propose des recommandations fondées sur l'usage réel ?",
+    options: [
+      "Les recommandations de rôles IAM (IAM Recommender), fondées sur l'usage",
+      "Les budgets de facturation, avec des seuils d'alerte par projet",
+      "Les contrôles de disponibilité de Cloud Monitoring sur les services",
+      "Les règles d'organisation de restriction des emplacements de ressources"
+    ],
+    correct: [0],
+    explain: "IAM Recommender analyse l'usage réel des permissions par les principaux et propose de retirer ou de remplacer les rôles qui accordent des permissions en excès. Les budgets suivent les coûts, les contrôles de disponibilité testent des services, et les règles d'emplacement limitent les régions : aucun n'évalue l'usage des permissions."
+  },
+  {
+    id: "d5-19", domain: 5,
+    topic: "service-accounts", difficulty: 3,
+    doc: "https://docs.cloud.google.com/compute/docs/instances/change-service-account",
+    q: "Une VM de production utilise le compte de service par défaut de Compute Engine, dont le rôle est trop large. Vous avez créé un compte de service dédié aux droits minimaux. Comment le substituer à l'ancien ?",
+    options: [
+      "Arrêter la VM, changer son compte de service dans sa configuration, puis la redémarrer",
+      "Modifier la VM en marche : son compte de service peut être changé à chaud",
+      "Supprimer la VM et ses disques, car son compte de service ne peut jamais être modifié",
+      "Créer une clé JSON du nouveau compte et la copier dans le système de fichiers de la VM"
+    ],
+    correct: [0],
+    explain: "Le compte de service d'une VM se change lorsque la VM est arrêtée : on modifie la configuration, puis on la redémarre. Il n'est pas modifiable à chaud, et il n'est pas nécessaire de recréer la VM. Copier une clé JSON dans la VM va à l'encontre des bonnes pratiques : la VM s'authentifie avec le compte de service qui lui est rattaché, sans clé."
+  },
+  {
+    id: "d5-20", domain: 5,
+    topic: "secrets", difficulty: 2,
+    doc: "https://docs.cloud.google.com/secret-manager/docs/add-secret-version",
+    q: "Le mot de passe d'une base, stocké dans Secret Manager, a changé. L'application lit la version `latest` du secret. Que faites-vous pour qu'elle utilise la nouvelle valeur ?",
+    options: [
+      "Ajouter une nouvelle version du secret contenant la nouvelle valeur",
+      "Modifier la valeur de la version existante directement dans la console",
+      "Supprimer le secret puis le recréer sous un autre nom dans le projet",
+      "Redéployer l'application avec le mot de passe dans une variable d'environnement"
+    ],
+    correct: [0],
+    explain: "Les versions d'un secret sont immuables : pour changer la valeur, on ajoute une nouvelle version, et l'alias `latest` désigne la version activée la plus récente. On ne peut pas modifier une version existante. Recréer le secret sous un autre nom oblige à modifier l'application, et un mot de passe en variable d'environnement en clair annule l'intérêt de Secret Manager."
+  },
+  {
+    id: "d5-21", domain: 5,
+    topic: "networking", difficulty: 2,
+    doc: "https://docs.cloud.google.com/armor/docs/cloud-armor-overview",
+    q: "Votre site public, derrière un équilibreur de charge d'application externe, subit des attaques par déni de service et des requêtes issues de plages d'adresses IP malveillantes. Quel service ajoutez-vous pour les filtrer ?",
+    options: [
+      "Google Cloud Armor, avec une stratégie de sécurité sur le service de backend",
+      "Cloud NAT sur le routeur Cloud de la région où tournent les backends",
+      "Identity-Aware Proxy en transfert TCP, avec une règle de pare-feu dédiée",
+      "Des règles de pare-feu VPC qui bloquent ces adresses sur chacune des VM"
+    ],
+    correct: [0],
+    explain: "Cloud Armor s'applique au niveau de l'équilibreur de charge : ses stratégies de sécurité filtrent les adresses IP, bloquent des motifs d'attaque et limitent les attaques par déni de service avant que le trafic n'atteigne les backends. Cloud NAT gère le trafic sortant, IAP protège l'accès aux applications par identité, et les pare-feu des VM voient les adresses de l'équilibreur plutôt que celles des clients."
+  },
+  {
+    id: "d5-22", domain: 5,
+    topic: "storage", difficulty: 3,
+    doc: "https://docs.cloud.google.com/storage/docs/encryption/customer-managed-keys",
+    q: "Une règle interne impose que les données d'un bucket soient chiffrées avec des clés que votre organisation contrôle (rotation, désactivation), et non avec les clés gérées par Google par défaut. Que configurez-vous ?",
+    options: [
+      "Des clés de chiffrement gérées par le client (CMEK) dans Cloud KMS, associées au bucket",
+      "Une URL signée à durée limitée pour chacun des objets stockés dans le bucket",
+      "La gestion des versions d'objets, pour conserver plusieurs copies chiffrées des données",
+      "Une règle d'organisation de restriction des emplacements pour les ressources du bucket"
+    ],
+    correct: [0],
+    explain: "Avec les clés CMEK, les données du bucket sont chiffrées avec une clé que vous gérez dans Cloud KMS : vous contrôlez sa rotation et pouvez la désactiver, ce qui rend les données illisibles. Une URL signée donne un accès temporaire, les versions conservent des copies d'objets, et une règle d'emplacement limite les régions sans changer la clé de chiffrement."
   }
 ];

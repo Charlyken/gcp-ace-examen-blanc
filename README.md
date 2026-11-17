@@ -197,5 +197,5 @@ Les données sauvegardées dans le navigateur sont versionnées (`STORAGE_VERSIO
 
 ## Limites connues
 
-- La banque compte 84 questions (objectif : 200, ticket #10) : deux examens blancs successifs en partagent encore une bonne part.
+- La banque compte 104 questions (objectif : 200, ticket #10) : deux examens blancs successifs en partagent encore une partie.
 - Les domaines suivent l'ancien découpage en 5 sections ; le guide officiel actuel en compte 4 et ajoute des objectifs sur l'outillage Gemini, non couverts ici.
