@@ -303,6 +303,62 @@ export const QUESTIONS = [
     correct: [0],
     explain: "Seul le répertoire personnel de Cloud Shell est persistant (5 Go) ; la machine virtuelle sous-jacente est éphémère, donc ce qui se trouve en dehors de `$HOME` (y compris `/tmp` et les logiciels installés ailleurs) disparaît à la fin de la session. Aucun bucket ni dossier de projet n'est synchronisé automatiquement."
   },
+  {
+    id: "d1-22", domain: 1,
+    topic: "resource-hierarchy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/resource-manager/docs/managing-notification-contacts",
+    q: "Vous voulez que les notifications importantes de Google Cloud (sécurité, technique, facturation) soient envoyées à des adresses de groupe précises, définies par organisation, dossier ou projet. Que configurez-vous ?",
+    options: [
+      "Les contacts essentiels (Essential Contacts), définis sur l'organisation, le dossier ou le projet",
+      "Un récepteur de journaux d'audit qui envoie un e-mail à chaque changement de stratégie IAM",
+      "Un budget de facturation dont les seuils d'alerte sont envoyés aux administrateurs du compte",
+      "Une règle d'alerte Cloud Monitoring avec un canal de notification par e-mail dans chaque projet"
+    ],
+    correct: [0],
+    explain: "Les contacts essentiels permettent d'indiquer, pour une organisation, un dossier ou un projet, qui reçoit les communications de Google Cloud classées par catégorie (sécurité, technique, facturation, etc.), et les contacts se transmettent aux ressources enfants. Un récepteur de journaux, un budget et une alerte Cloud Monitoring envoient des notifications que vous avez vous-même définies, pas les communications de Google Cloud."
+  },
+  {
+    id: "d1-23", domain: 1,
+    topic: "gcloud", difficulty: 2,
+    doc: "https://docs.cloud.google.com/sdk/gcloud/reference/topic/filters",
+    q: "Vous voulez afficher uniquement le nom des VM arrêtées (statut `TERMINATED`) du projet actif, un par ligne, pour les transmettre à un script. Quelle commande utilisez-vous ?",
+    options: [
+      "`gcloud compute instances list --filter='status=TERMINATED' --format='value(name)'`",
+      "`gcloud compute instances list --status=TERMINATED --names-only`, avec des options propres à la liste",
+      "`gcloud compute instances describe --filter='status=TERMINATED' --format='value(name)'`",
+      "`gcloud compute instances list | grep TERMINATED`, qui affiche les lignes complètes du tableau"
+    ],
+    correct: [0],
+    explain: "`--filter` sélectionne les ressources selon une expression sur leurs champs, et `--format='value(name)'` n'affiche que la valeur du champ `name`, une par ligne, ce qui convient à un script. Les options `--status` et `--names-only` n'existent pas. `describe` décrit une seule instance et n'accepte pas de filtre de liste. Avec `grep`, on obtient les lignes entières du tableau et non les seuls noms."
+  },
+  {
+    id: "d1-24", domain: 1,
+    topic: "org-policy", difficulty: 1,
+    doc: "https://docs.cloud.google.com/organization-policy/apply-policies",
+    q: "Un responsable de la conformité doit pouvoir créer, modifier et supprimer des règles d'organisation pour toute l'organisation, sans autre droit d'administration. Quel rôle lui accordez-vous au niveau de l'organisation ?",
+    options: [
+      "Administrateur des règles d'organisation (`roles/orgpolicy.policyAdmin`)",
+      "Lecteur de l'organisation (`roles/resourcemanager.organizationViewer`)",
+      "Créateur de projets (`roles/resourcemanager.projectCreator`)",
+      "Utilisateur de compte de facturation (`roles/billing.user`)"
+    ],
+    correct: [0],
+    explain: "Pour modifier ou remplacer une règle d'organisation, il faut disposer du rôle Administrateur des règles d'organisation, `roles/orgpolicy.policyAdmin`. Le rôle Lecteur de l'organisation permet seulement de consulter, Créateur de projets de créer des projets, et Utilisateur de compte de facturation de rattacher des projets à un compte de facturation."
+  },
+  {
+    id: "d1-25", domain: 1,
+    topic: "org-policy", difficulty: 2,
+    doc: "https://docs.cloud.google.com/organization-policy/reference/org-policy-constraints",
+    q: "Chaque nouveau projet de l'organisation est créé avec un réseau VPC `default` et ses règles de pare-feu permissives. La sécurité veut que les nouveaux projets n'aient aucun réseau par défaut. Que configurez-vous ?",
+    options: [
+      "La règle d'organisation `compute.skipDefaultNetworkCreation`, appliquée à l'organisation",
+      "Un rôle personnalisé sans permission de création de réseaux pour les créateurs de projets",
+      "Un script Cloud Build qui supprime le réseau `default` de chaque projet une fois par semaine",
+      "Une règle de pare-feu qui refuse tout le trafic entrant sur le réseau `default` des projets"
+    ],
+    correct: [0],
+    explain: "Par défaut, un réseau et des ressources associées sont créés automatiquement avec chaque projet ; la contrainte `compute.skipDefaultNetworkCreation` empêche cette création pour tous les projets concernés. Un rôle personnalisé ne contrôle pas ce comportement automatique, un script supprime le réseau après coup (avec une fenêtre d'exposition), et une règle de refus laisse le réseau en place."
+  },
 
   /* ------------------------------------------------------------------
      DOMAINE 2 — Planifier et configurer une solution cloud
@@ -545,6 +601,48 @@ export const QUESTIONS = [
     ],
     correct: [0],
     explain: "Les nœuds à locataire unique sont des serveurs physiques réservés à votre projet : vos VM n'y cohabitent pas avec celles d'autres clients, ce qui répond aux exigences de licence ou de conformité. Les VM Spot, les groupes régionaux et les remises sur engagement concernent le coût ou la disponibilité, pas l'isolation matérielle."
+  },
+  {
+    id: "d2-22", domain: 2,
+    topic: "load-balancing", difficulty: 2,
+    doc: "https://docs.cloud.google.com/cdn/docs/overview",
+    q: "Un site diffuse des images et des fichiers statiques à des utilisateurs du monde entier, et la latence est élevée loin de la région d'hébergement. Quelle fonctionnalité met le contenu en cache près des utilisateurs ?",
+    options: [
+      "Cloud CDN, activé sur le service de backend de l'équilibreur de charge",
+      "Un cluster Memorystore déployé dans chaque région d'hébergement",
+      "Un équilibreur de charge réseau passthrough interne devant les serveurs",
+      "Des VM Spot supplémentaires dans la région d'origine du site"
+    ],
+    correct: [0],
+    explain: "Cloud CDN met en cache le contenu sur le réseau de périphérie de Google, au plus près des utilisateurs, ce qui réduit la latence et la charge sur les backends. Memorystore est un cache de données applicatives interne à une région, un équilibreur interne ne sert pas des utilisateurs du monde entier, et des VM supplémentaires dans la région d'origine ne rapprochent pas le contenu des utilisateurs."
+  },
+  {
+    id: "d2-23", domain: 2,
+    topic: "databases", difficulty: 2,
+    doc: "https://docs.cloud.google.com/database-migration/docs/overview",
+    q: "Vous devez migrer une base MySQL hébergée dans votre centre de données vers Cloud SQL, avec le moins d'interruption possible au moment de la bascule. Quel service utilisez-vous ?",
+    options: [
+      "Database Migration Service, qui réplique les données en continu jusqu'à la bascule",
+      "Storage Transfer Service, configuré pour copier périodiquement les fichiers de la base",
+      "Une exportation CSV de chaque table, suivie d'un import avec la commande `bq load`",
+      "Transfer Appliance, un équipement physique expédié dans votre centre de données"
+    ],
+    correct: [0],
+    explain: "Database Migration Service copie la base source vers Cloud SQL puis réplique les changements en continu, ce qui limite l'interruption à la bascule finale. Storage Transfer Service déplace des fichiers et des objets, pas une base en fonctionnement. `bq load` charge des données dans BigQuery, pas dans Cloud SQL. Transfer Appliance sert à envoyer de gros volumes de fichiers hors ligne."
+  },
+  {
+    id: "d2-24", domain: 2,
+    topic: "storage", difficulty: 2,
+    doc: "https://docs.cloud.google.com/transfer-appliance/docs/4.0/overview",
+    q: "Votre entreprise doit transférer 400 To de données depuis un site dont la connexion Internet est trop lente pour un envoi en ligne dans un délai raisonnable. Quelle solution choisissez-vous ?",
+    options: [
+      "Transfer Appliance : un équipement physique expédié par Google, rempli puis renvoyé",
+      "Storage Transfer Service, configuré avec une planification quotidienne depuis le site",
+      "Une liaison Cloud VPN établie sur la même connexion Internet que celle du site",
+      "La commande `gcloud storage cp` lancée depuis un poste de travail du site"
+    ],
+    correct: [0],
+    explain: "Quand la bande passante rend un transfert en ligne trop long, Transfer Appliance permet de copier les données sur un équipement physique expédié par Google, que l'on renvoie ensuite pour que les données soient chargées dans Cloud Storage. Storage Transfer Service, un VPN et `gcloud storage cp` passent tous par la même connexion trop lente."
   },
 
   /* ------------------------------------------------------------------
@@ -958,6 +1056,76 @@ export const QUESTIONS = [
     correct: [0],
     explain: "Cloud Build exécute des étapes de construction et de déploiement décrites dans un fichier de configuration, et un déclencheur le lance automatiquement à chaque push. Cloud Scheduler lance des tâches à heure fixe sans lien avec le dépôt, Pub/Sub transporte des messages, et un récepteur de journaux exporte des logs : aucun ne construit ni ne déploie."
   },
+  {
+    id: "d3-31", domain: 3,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/instance-groups/regional-migs",
+    q: "Un site web tourne sur un groupe d'instances géré et doit rester disponible même si toute une zone de la région tombe en panne. Quelle configuration choisissez-vous ?",
+    options: [
+      "Un groupe d'instances géré régional, qui répartit les VM sur plusieurs zones",
+      "Un groupe d'instances géré zonal, avec un autoscaler réglé sur 10 VM au minimum",
+      "Un groupe d'instances géré zonal, dont la réparation automatique est activée",
+      "Un groupe de VM Spot placées dans une seule zone pour limiter les risques de panne"
+    ],
+    correct: [0],
+    explain: "Un groupe d'instances géré régional répartit ses VM sur plusieurs zones de la région : si une zone tombe, les VM des autres zones continuent de servir. Un groupe zonal reste dans une seule zone : l'autoscaler comme la réparation automatique recréent des VM, mais dans cette même zone. Les VM Spot n'apportent pas non plus de protection contre la panne d'une zone."
+  },
+  {
+    id: "d3-32", domain: 3,
+    topic: "serverless", difficulty: 2,
+    doc: "https://docs.cloud.google.com/run/docs/configuring/min-instances",
+    q: "Un service Cloud Run reçoit très peu de trafic la nuit. Le premier utilisateur du matin subit un délai dû au démarrage d'une instance. Comment réduire ce délai en gardant un service géré ?",
+    options: [
+      "Définir un nombre minimal d'instances (par exemple 1), pour qu'une instance reste prête",
+      "Porter la mémoire de chaque instance à la valeur maximale autorisée par Cloud Run",
+      "Fixer la concurrence à 1 requête par instance, pour que chaque requête ait son instance",
+      "Remplacer le service par un job Cloud Run déclenché toutes les minutes par un planificateur"
+    ],
+    correct: [0],
+    explain: "Un nombre minimal d'instances garde des instances actives même sans trafic, ce qui évite les démarrages lents lorsque le service repart de zéro ; en contrepartie, ces instances inactives sont facturées. Plus de mémoire ne supprime pas le délai de démarrage, une concurrence de 1 oblige à créer davantage d'instances, et un job planifié ne sert pas de requêtes HTTP."
+  },
+  {
+    id: "d3-33", domain: 3,
+    topic: "storage", difficulty: 1,
+    doc: "https://docs.cloud.google.com/sdk/gcloud/reference/storage/rsync",
+    q: "Vous devez synchroniser régulièrement un dossier local avec un bucket Cloud Storage, en ne transférant que les fichiers nouveaux ou modifiés. Quelle commande utilisez-vous ?",
+    options: [
+      "`gcloud storage rsync dossier gs://mon-bucket --recursive`, qui ne transfère que les différences",
+      "`gcloud storage cp --recursive dossier gs://mon-bucket`, qui copie tous les fichiers à chaque exécution",
+      "`gcloud storage mv dossier gs://mon-bucket`, qui déplace les fichiers vers le bucket",
+      "`gcloud storage ls gs://mon-bucket --recursive`, qui compare les deux emplacements"
+    ],
+    correct: [0],
+    explain: "`gcloud storage rsync` compare la source et la destination et ne transfère que ce qui diffère ; `--recursive` inclut les sous-dossiers. `cp` recopie les fichiers à chaque exécution, `mv` déplace (et supprime la source), et `ls` ne fait que lister : il ne compare ni ne transfère rien."
+  },
+  {
+    id: "d3-34", domain: 3,
+    topic: "networking", difficulty: 2,
+    doc: "https://docs.cloud.google.com/dns/docs/overview",
+    q: "Les VM d'un VPC doivent se joindre par des noms internes comme `base.interne.entreprise`, sans que ces noms soient exposés sur Internet. Que configurez-vous ?",
+    options: [
+      "Une zone Cloud DNS privée, visible uniquement depuis le réseau VPC autorisé",
+      "Une zone Cloud DNS publique avec des enregistrements pointant vers les adresses internes",
+      "Un fichier `/etc/hosts` copié à la main sur chacune des VM du réseau",
+      "Une règle de pare-feu qui autorise le trafic DNS entre les VM du réseau"
+    ],
+    correct: [0],
+    explain: "Une zone Cloud DNS privée n'est visible que depuis les réseaux VPC auxquels on l'attache : les VM résolvent les noms internes sans qu'ils soient publiés sur Internet. Une zone publique exposerait ces noms et ces adresses. Un fichier `hosts` copié à la main se désynchronise vite, et une règle de pare-feu autorise du trafic sans fournir de résolution de noms."
+  },
+  {
+    id: "d3-35", domain: 3,
+    topic: "iac", difficulty: 2,
+    doc: "https://docs.cloud.google.com/deploy/docs/overview",
+    q: "Vous voulez livrer une application vers des environnements successifs (développement, recette, production) sur GKE ou Cloud Run, avec une promotion contrôlée d'une cible à la suivante. Quel service est conçu pour cela ?",
+    options: [
+      "Cloud Deploy, avec un pipeline de livraison et des cibles successives à promouvoir",
+      "Cloud Scheduler, avec une tâche planifiée pour chaque environnement",
+      "Artifact Registry, qui promeut automatiquement les images d'un environnement à l'autre",
+      "Secret Manager, avec une version de secret distincte pour chaque environnement"
+    ],
+    correct: [0],
+    explain: "Cloud Deploy gère la livraison continue : un pipeline de livraison définit les cibles successives et la promotion des versions de l'une à l'autre, avec d'éventuelles approbations. Cloud Scheduler lance des tâches à heure fixe, Artifact Registry stocke des artefacts sans orchestrer de déploiements, et Secret Manager stocke des secrets."
+  },
 
   /* ------------------------------------------------------------------
      DOMAINE 4 — Assurer le bon fonctionnement d'une solution cloud
@@ -1253,6 +1421,62 @@ export const QUESTIONS = [
     correct: [0],
     explain: "Une fenêtre de maintenance indique quand GKE peut effectuer les mises à jour automatiques, et les exclusions de maintenance permettent d'éviter des périodes sensibles. Un quota, l'autoscaler ou un pare-feu n'influencent pas le moment des mises à jour du plan de contrôle et des nœuds."
   },
+  {
+    id: "d4-23", domain: 4,
+    topic: "compute", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/vm-manager/docs/patch",
+    q: "Vous devez appliquer les mises à jour de sécurité du système d'exploitation sur 200 VM Linux et Windows, selon un calendrier et avec un rapport de conformité, sans vous connecter à chaque VM. Quelle solution utilisez-vous ?",
+    options: [
+      "La gestion des correctifs d'OS de VM Manager, avec des déploiements de correctifs planifiés",
+      "Un script de démarrage qui lance les mises à jour à chaque redémarrage de chaque VM",
+      "Cloud Build, avec un déclencheur qui se connecte en SSH aux VM toutes les nuits",
+      "Une règle d'alerte Cloud Monitoring sur la version du système d'exploitation des VM"
+    ],
+    correct: [0],
+    explain: "La gestion des correctifs de VM Manager applique les mises à jour d'OS à une flotte de VM selon un calendrier, avec des rapports sur l'état de chaque VM, sans connexion manuelle. Un script de démarrage ne s'exécute qu'au redémarrage et n'offre ni calendrier ni rapport, Cloud Build n'est pas conçu pour administrer des VM, et une alerte signale un écart sans corriger quoi que ce soit."
+  },
+  {
+    id: "d4-24", domain: 4,
+    topic: "monitoring", difficulty: 1,
+    doc: "https://docs.cloud.google.com/error-reporting/docs/grouping-errors",
+    q: "Votre application consigne des exceptions de toutes sortes. Vous voulez que les erreurs identiques soient regroupées, comptées et signalées, sans lire les journaux un par un. Quel service utilisez-vous ?",
+    options: [
+      "Error Reporting, qui regroupe et compte les erreurs de l'application",
+      "Cloud Trace, qui retrace la latence des requêtes entre les services",
+      "Cloud Billing, qui détaille les coûts de chaque service utilisé",
+      "Artifact Registry, qui conserve les versions des images déployées"
+    ],
+    correct: [0],
+    explain: "Error Reporting analyse les erreurs consignées par l'application, regroupe celles qui sont identiques, les compte et permet d'être notifié des nouvelles erreurs. Cloud Trace analyse la latence, Cloud Billing les coûts, et Artifact Registry stocke des artefacts : aucun ne regroupe des erreurs."
+  },
+  {
+    id: "d4-25", domain: 4,
+    topic: "storage", difficulty: 2,
+    doc: "https://docs.cloud.google.com/storage/docs/autoclass",
+    q: "Les objets d'un bucket ont des habitudes d'accès imprévisibles : certains restent inutilisés pendant des mois puis redeviennent très consultés. Vous voulez que Cloud Storage ajuste automatiquement leur classe de stockage, sans règles de cycle de vie à maintenir. Qu'activez-vous ?",
+    options: [
+      "Autoclass, activé sur le bucket pour ajuster seul la classe de chaque objet",
+      "Une règle de cycle de vie qui passe tous les objets en Archive après 90 jours",
+      "La gestion des versions d'objets, pour conserver les anciennes copies des objets",
+      "Une politique de rétention de 90 jours, appliquée à tous les objets du bucket"
+    ],
+    correct: [0],
+    explain: "Autoclass déplace automatiquement chaque objet entre les classes de stockage selon son activité réelle, sans règle à écrire. Une règle de cycle de vie fixe est précisément ce qu'on veut éviter, et elle ne ramène pas un objet redevenu populaire vers une classe plus chaude. Les versions et la rétention n'agissent pas sur la classe de stockage."
+  },
+  {
+    id: "d4-26", domain: 4,
+    topic: "bigquery", difficulty: 2,
+    doc: "https://docs.cloud.google.com/bigquery/docs/time-travel",
+    q: "Une table BigQuery a été vidée par une requête `DELETE` erronée il y a deux jours. Vous voulez retrouver son contenu d'avant l'erreur. Quelle fonctionnalité utilisez-vous ?",
+    options: [
+      "Le voyage dans le temps (time travel) de BigQuery, avec `FOR SYSTEM_TIME AS OF`",
+      "Les instantanés de table que BigQuery crée automatiquement chaque nuit pour toutes les tables",
+      "Les journaux d'audit Cloud Logging, qui conservent le contenu des lignes supprimées",
+      "La récupération à un instant précis (PITR) de Cloud SQL, appliquée à la table"
+    ],
+    correct: [0],
+    explain: "Le voyage dans le temps permet d'interroger une table telle qu'elle était à un instant passé, dans la fenêtre de conservation (7 jours par défaut), avec `FOR SYSTEM_TIME AS OF`, et donc de restaurer les données supprimées. BigQuery ne crée pas d'instantanés automatiques chaque nuit, les journaux d'audit enregistrent des opérations mais pas le contenu des lignes, et la récupération à un instant précis concerne Cloud SQL, pas BigQuery."
+  },
 
   /* ------------------------------------------------------------------
      DOMAINE 5 — Configurer l'accès et la sécurité
@@ -1524,5 +1748,61 @@ export const QUESTIONS = [
     ],
     correct: [0],
     explain: "Avec les clés CMEK, les données du bucket sont chiffrées avec une clé que vous gérez dans Cloud KMS : vous contrôlez sa rotation et pouvez la désactiver, ce qui rend les données illisibles. Une URL signée donne un accès temporaire, les versions conservent des copies d'objets, et une règle d'emplacement limite les régions sans changer la clé de chiffrement."
+  },
+  {
+    id: "d5-23", domain: 5,
+    topic: "iam", difficulty: 2,
+    doc: "https://docs.cloud.google.com/compute/docs/oslogin",
+    q: "Cinquante administrateurs se connectent en SSH à des VM. Vous voulez éviter de gérer des clés SSH dans les métadonnées, lier l'accès SSH aux rôles IAM et pouvoir le révoquer immédiatement au départ d'une personne. Qu'activez-vous ?",
+    options: [
+      "OS Login sur les VM, avec des rôles IAM de connexion accordés à chaque administrateur",
+      "Une clé SSH commune, ajoutée aux métadonnées du projet et partagée entre les administrateurs",
+      "Un compte Linux local par administrateur, créé à la main sur chacune des VM",
+      "L'agent Ops, qui crée les comptes Linux des administrateurs à partir de leur adresse e-mail"
+    ],
+    correct: [0],
+    explain: "OS Login associe les comptes Linux des VM aux identités IAM : l'accès SSH dépend des rôles accordés, sans gestion manuelle de clés dans les métadonnées, et retirer le rôle révoque l'accès. Une clé partagée supprime la traçabilité et se révoque difficilement, des comptes locaux créés à la main sont longs à maintenir, et l'agent Ops collecte des métriques et des journaux, il ne gère pas les accès SSH."
+  },
+  {
+    id: "d5-24", domain: 5,
+    topic: "iam", difficulty: 2,
+    doc: "https://docs.cloud.google.com/docs/authentication/api-keys",
+    q: "Une clé d'API pour l'API Maps est intégrée à une application web publique. Vous voulez limiter les dégâts si elle est copiée et réutilisée ailleurs. Que faites-vous ?",
+    options: [
+      "Restreindre la clé à l'API concernée et aux sites web autorisés (référents HTTP)",
+      "Chiffrer la clé dans le code source avec un algorithme maison pour la rendre illisible",
+      "Accorder à la clé le rôle Lecteur du projet pour limiter les actions qu'elle permet",
+      "Remplacer la clé par le compte de service par défaut de Compute Engine dans le navigateur"
+    ],
+    correct: [0],
+    explain: "Une clé d'API peut être restreinte aux API qu'elle a le droit d'appeler et aux sites web (référents HTTP), adresses IP ou applications autorisés : copiée ailleurs, elle devient inutilisable. Le code d'une application web publique est lisible par tout le monde, donc chiffrer la clé dans le code est inefficace. Une clé d'API standard n'authentifie aucun principal : on ne lui accorde donc pas de rôle IAM. Exposer un compte de service dans un navigateur serait bien pire."
+  },
+  {
+    id: "d5-25", domain: 5,
+    topic: "networking", difficulty: 3,
+    doc: "https://docs.cloud.google.com/vpc-service-controls/docs/overview",
+    q: "Des identifiants volés pourraient permettre à un attaquant de copier des données BigQuery et Cloud Storage vers un projet extérieur à l'organisation. Quel service ajoute un périmètre de protection contre cette exfiltration ?",
+    options: [
+      "VPC Service Controls, avec un périmètre de service autour des projets",
+      "Cloud Armor, avec une stratégie de sécurité sur l'équilibreur de charge",
+      "Cloud NAT, configuré sur le routeur Cloud de la région des projets",
+      "Sensitive Data Protection, qui détecte et masque les données sensibles"
+    ],
+    correct: [0],
+    explain: "VPC Service Controls définit un périmètre autour des projets et des services et contrôle les échanges de données avec l'extérieur de ce périmètre, ce qui réduit le risque d'exfiltration ; il refuse aussi des accès depuis des réseaux non autorisés même si une stratégie IAM mal configurée les permet. Cloud Armor filtre le trafic entrant vers un équilibreur, Cloud NAT gère le trafic sortant des VM sans l'empêcher de copier des données, et la protection des données sensibles repère et masque des informations mais ne bloque pas leur déplacement."
+  },
+  {
+    id: "d5-26", domain: 5,
+    topic: "networking", difficulty: 2,
+    doc: "https://docs.cloud.google.com/vpc/docs/private-google-access",
+    q: "Des VM sans adresse IP externe doivent lire des objets dans Cloud Storage, sans passer par Internet. Qu'activez-vous sur leur sous-réseau ?",
+    options: [
+      "L'accès privé à Google (Private Google Access)",
+      "Un appairage de réseaux VPC avec le réseau de Google",
+      "Une adresse IP éphémère attribuée à chacune des VM",
+      "Un VPC partagé avec un projet hôte contenant le sous-réseau"
+    ],
+    correct: [0],
+    explain: "L'accès privé à Google permet aux VM qui n'ont que des adresses IP internes d'atteindre les API et services Google (Cloud Storage, par exemple) sans adresse externe. Cloud NAT, lui, sert à joindre Internet. Un appairage avec « le réseau de Google » n'existe pas, une adresse externe va à l'encontre de la consigne, et un VPC partagé organise la gestion du réseau sans donner cet accès."
   }
 ];
